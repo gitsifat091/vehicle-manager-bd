@@ -115,7 +115,10 @@ class GameColors extends ThemeExtension<GameColors> {
     );
   }
 
-  static final light = GameColors.fromPalette(LalSabujPalette.light, dark: false);
+  static final light = GameColors.fromPalette(
+    LalSabujPalette.light,
+    dark: false,
+  );
   static final dark = GameColors.fromPalette(LalSabujPalette.dark, dark: true);
 
   @override
@@ -187,7 +190,8 @@ class GameColors extends ThemeExtension<GameColors> {
       turboBadge: c(turboBadge, other.turboBadge),
       onTurboBadge: c(onTurboBadge, other.onTurboBadge),
       routeStrokeWidth:
-          lerpDouble(routeStrokeWidth, other.routeStrokeWidth, t) ?? routeStrokeWidth,
+          lerpDouble(routeStrokeWidth, other.routeStrokeWidth, t) ??
+          routeStrokeWidth,
     );
   }
 }

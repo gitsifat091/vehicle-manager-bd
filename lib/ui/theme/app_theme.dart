@@ -9,7 +9,10 @@ import 'game_colors.dart';
 import 'lal_sabuj_tokens.dart';
 
 abstract final class AppTheme {
-  static final ThemeData light = _build(LalSabujPalette.light, Brightness.light);
+  static final ThemeData light = _build(
+    LalSabujPalette.light,
+    Brightness.light,
+  );
   static final ThemeData dark = _build(LalSabujPalette.dark, Brightness.dark);
 
   static ThemeData _build(LalSabujPalette p, Brightness brightness) {
@@ -48,14 +51,18 @@ abstract final class AppTheme {
       outlineVariant: p.line,
       inverseSurface: p.ink,
       onInverseSurface: p.surface,
-      inversePrimary: isDark ? LalSabujPalette.light.sabuj : LalSabujPalette.dark.sabuj,
+      inversePrimary: isDark
+          ? LalSabujPalette.light.sabuj
+          : LalSabujPalette.dark.sabuj,
       shadow: Colors.black,
       scrim: Colors.black,
       surfaceTint: Colors.transparent,
     );
 
     final text = _textTheme(p);
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.md));
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Radii.md),
+    );
     const buttonSize = Size(64, 44);
     const buttonPadding = EdgeInsets.symmetric(horizontal: Space.s4);
 
@@ -117,7 +124,10 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.surfaceRaised,
-        contentPadding: const EdgeInsets.symmetric(horizontal: Space.s4, vertical: Space.s2 + 2),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: Space.s4,
+          vertical: Space.s2 + 2,
+        ),
         hintStyle: text.bodyMedium?.copyWith(color: p.inkMuted),
         border: _inputBorder(p.inkMuted),
         enabledBorder: _inputBorder(p.inkMuted),
@@ -131,7 +141,9 @@ abstract final class AppTheme {
         selectedColor: p.sabujSoft,
         side: BorderSide(color: p.inkMuted),
         labelStyle: text.labelLarge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.sm)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.sm),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: p.surfaceRaised,
@@ -182,7 +194,13 @@ abstract final class AppTheme {
   // the taller leading for matras and conjuncts. No letter-spacing anywhere:
   // it breaks the Bangla headstroke.
   static TextTheme _textTheme(LalSabujPalette p) {
-    TextStyle style(String family, double size, double lineHeight, FontWeight weight, Color color) {
+    TextStyle style(
+      String family,
+      double size,
+      double lineHeight,
+      FontWeight weight,
+      Color color,
+    ) {
       return TextStyle(
         fontFamily: family,
         fontFamilyFallback: Fonts.fallback,
@@ -223,15 +241,15 @@ abstract final class GameText {
   /// while a number ticks up.
   static TextStyle money(BuildContext context) {
     return Theme.of(context).textTheme.headlineMedium!.copyWith(
-          fontFeatures: const [FontFeature.tabularFigures()],
-        );
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
   }
 
   /// Small numbers inside cards and lists (trip time, demand, payload).
   static TextStyle stat(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge!.copyWith(
-          fontFeatures: const [FontFeature.tabularFigures()],
-        );
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
   }
 }
 
