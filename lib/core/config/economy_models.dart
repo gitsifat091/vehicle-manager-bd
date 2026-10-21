@@ -35,6 +35,7 @@ class EconomySettings {
     required this.accidentCostShareOfPrice,
     required this.maxLineHaulKm,
     required this.startingGarageSlots,
+    required this.resaleShareOfPrice,
   });
 
   final double dieselPricePerLitre;
@@ -65,6 +66,9 @@ class EconomySettings {
   /// Vehicles the garage holds at the start, counting the free Sathi Plus.
   /// Buying with no free slot is rejected (see checkGarageSlot).
   final int startingGarageSlots;
+
+  /// A vehicle sells for this share of its price (0 to 1). See resaleValueTk.
+  final double resaleShareOfPrice;
 }
 
 class VehicleSpec {
@@ -84,7 +88,8 @@ class VehicleSpec {
     required this.smallLoadPremium,
     required this.tollClass,
     required this.highwayAllowed,
-    required this.unlock,
+    this.unlockLicenseId,
+    this.unlockDeliveries = 0,
     this.allowedRoutes = const [],
   });
 
@@ -105,7 +110,17 @@ class VehicleSpec {
   final double smallLoadPremium;
   final String tollClass;
   final bool highwayAllowed;
-  final String unlock;
+
+  /// The license the player must own to buy this vehicle, or null when none is
+  /// needed. A vehicle has either a license or a delivery count, not both.
+  final String? unlockLicenseId;
+
+  /// Settled trips the company must have before it can buy this vehicle.
+  /// 0 means no delivery requirement.
+  final int unlockDeliveries;
+
+  /// True when the vehicle can be bought from the start of the game.
+  bool get availableAtStart => unlockLicenseId == null && unlockDeliveries == 0;
 
   /// Route ids this vehicle is limited to. Empty means any route.
   final List<String> allowedRoutes;
@@ -113,6 +128,19 @@ class VehicleSpec {
   /// Whether the vehicle's own route limit lets it run [routeId].
   bool canRunRoute(String routeId) =>
       allowedRoutes.isEmpty || allowedRoutes.contains(routeId);
+}
+
+/// A one-time Taka purchase that unlocks vehicle tiers.
+class LicenseSpec {
+  const LicenseSpec({
+    required this.id,
+    required this.name,
+    required this.priceTk,
+  });
+
+  final String id;
+  final String name;
+  final int priceTk;
 }
 
 class CargoSpec {

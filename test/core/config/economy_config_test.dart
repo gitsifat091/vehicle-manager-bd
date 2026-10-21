@@ -126,6 +126,73 @@ void main() {
       expect(() => EconomyConfig.parse(empty), configError('is empty'));
     });
 
+    test('reads the licenses table', () {
+      expect(config.licenses.map((l) => l.id), [
+        'light',
+        'medium',
+        'cold_chain',
+        'hazmat',
+        'heavy',
+      ]);
+      expect(config.licenseById('hazmat').name, 'Hazmat license');
+      expect(config.licenseById('heavy').priceTk, 1000000);
+      expect(() => config.licenseById('pilot'), throwsArgumentError);
+      expect(() => config.licenses.removeLast(), throwsUnsupportedError);
+    });
+
+    test('reads vehicle unlocks: a license id or a delivery count', () {
+      expect(config.vehicleByTier(3).unlockDeliveries, 5);
+      expect(config.vehicleByTier(3).unlockLicenseId, isNull);
+      expect(config.vehicleByTier(5).unlockLicenseId, 'light');
+      expect(config.vehicleByTier(5).unlockDeliveries, 0);
+      for (final v in config.vehicles) {
+        expect(
+          v.unlockLicenseId != null && v.unlockDeliveries > 0,
+          false,
+          reason: 'tier ${v.tier} has both',
+        );
+      }
+    });
+
+    test('rejects an unlock license that is not in the table', () {
+      final text = edited((j) => j['vehicles'][4]['unlockLicense'] = 'pilot');
+      expect(() => EconomyConfig.parse(text), configError('"pilot"'));
+    });
+
+    test('rejects a vehicle with both a license and a delivery count', () {
+      final text = edited((j) => j['vehicles'][4]['unlockDeliveries'] = 3);
+      expect(() => EconomyConfig.parse(text), configError('use one'));
+    });
+
+    test('rejects a missing delivery count and a negative one', () {
+      final missing = edited((j) => j['vehicles'][0].remove('unlockDeliveries'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('vehicles[0].unlockDeliveries is missing'),
+      );
+      final negative = edited((j) => j['vehicles'][0]['unlockDeliveries'] = -1);
+      expect(() => EconomyConfig.parse(negative), configError('negative'));
+    });
+
+    test('rejects a license that unlocks nothing', () {
+      final text = edited((j) {
+        for (final v in j['vehicles']) {
+          if (v['unlockLicense'] == 'light') v['unlockLicense'] = null;
+        }
+      });
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('"light" does not unlock any vehicle'),
+      );
+    });
+
+    test('rejects duplicate license ids and a zero price', () {
+      final dup = edited((j) => j['licenses'][1]['id'] = 'light');
+      expect(() => EconomyConfig.parse(dup), configError('duplicate id'));
+      final free = edited((j) => j['licenses'][0]['priceTk'] = 0);
+      expect(() => EconomyConfig.parse(free), configError('priceTk must be'));
+    });
+
     test('reads vehicle allowedRoutes: only tier 1 is limited', () {
       expect(config.vehicleByTier(1).allowedRoutes, ['M01', 'M02']);
       expect(config.vehicleByTier(1).canRunRoute('M02'), true);
@@ -167,6 +234,22 @@ void main() {
         () => EconomyConfig.parse(zero),
         configError('startingGarageSlots must be at least 1'),
       );
+    });
+
+    test('reads resaleShareOfPrice and keeps it between 0 and 1', () {
+      expect(config.settings.resaleShareOfPrice, 0.6);
+      final missing = edited((j) => j['settings'].remove('resaleShareOfPrice'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('settings.resaleShareOfPrice is missing'),
+      );
+      for (final bad in [-0.1, 1.5]) {
+        final text = edited((j) => j['settings']['resaleShareOfPrice'] = bad);
+        expect(
+          () => EconomyConfig.parse(text),
+          configError('resaleShareOfPrice must be between 0 and 1'),
+        );
+      }
     });
 
     test('rejects missing maxLineHaulKm', () {

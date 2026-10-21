@@ -16,10 +16,12 @@ class EconomyConfig {
     required this.currency,
     required this.settings,
     required List<VehicleSpec> vehicles,
+    required List<LicenseSpec> licenses,
     required List<CargoSpec> cargo,
     required Map<String, Map<String, double>> tolls,
     required List<RouteSpec> routes,
   }) : vehicles = List.unmodifiable(vehicles),
+       licenses = List.unmodifiable(licenses),
        cargo = List.unmodifiable(cargo),
        tolls = Map<String, Map<String, double>>.unmodifiable({
          for (final e in tolls.entries)
@@ -31,6 +33,7 @@ class EconomyConfig {
   final String currency;
   final EconomySettings settings;
   final List<VehicleSpec> vehicles;
+  final List<LicenseSpec> licenses;
   final List<CargoSpec> cargo;
 
   /// tolls[tollClass][crossing] in Taka for a one-way pass.
@@ -56,6 +59,7 @@ class EconomyConfig {
         .list('vehicles')
         .map((r) => _parseVehicle(r))
         .toList();
+    final licenses = root.list('licenses').map((r) => _parseLicense(r)).toList();
     final cargo = root.list('cargo').map((r) => _parseCargo(r)).toList();
     final routes = root.list('routes').map((r) => _parseRoute(r)).toList();
     final tolls = _parseTolls(root.object('tolls'));
@@ -65,6 +69,7 @@ class EconomyConfig {
       currency: root.string('currency'),
       settings: settings,
       vehicles: vehicles,
+      licenses: licenses,
       cargo: cargo,
       tolls: tolls,
       routes: routes,
@@ -85,6 +90,13 @@ class EconomyConfig {
       if (r.id == id) return r;
     }
     throw ArgumentError.value(id, 'id', 'No route with this id');
+  }
+
+  LicenseSpec licenseById(String id) {
+    for (final l in licenses) {
+      if (l.id == id) return l;
+    }
+    throw ArgumentError.value(id, 'id', 'No license with this id');
   }
 
   CargoSpec cargoByName(String name) {
@@ -155,6 +167,48 @@ class EconomyConfig {
         'settings.startingGarageSlots must be at least 1',
       );
     }
+    if (settings.resaleShareOfPrice < 0 || settings.resaleShareOfPrice > 1) {
+      throw ConfigException(
+        'settings.resaleShareOfPrice must be between 0 and 1, '
+        'got ${settings.resaleShareOfPrice}',
+      );
+    }
+    final licenseIds = <String>{};
+    for (final l in licenses) {
+      if (!licenseIds.add(l.id)) {
+        throw ConfigException('licenses: duplicate id "${l.id}"');
+      }
+      if (l.priceTk <= 0) {
+        throw ConfigException('licenses: "${l.id}" priceTk must be above 0');
+      }
+    }
+    final usedLicenses = <String>{};
+    for (final v in vehicles) {
+      final licenseId = v.unlockLicenseId;
+      if (v.unlockDeliveries < 0) {
+        throw ConfigException(
+          'vehicles: tier ${v.tier} unlockDeliveries cannot be negative',
+        );
+      }
+      if (licenseId != null) {
+        if (!licenseIds.contains(licenseId)) {
+          throw ConfigException(
+            'vehicles: tier ${v.tier} unlockLicense "$licenseId" '
+            'is not a license id',
+          );
+        }
+        if (v.unlockDeliveries > 0) {
+          throw ConfigException(
+            'vehicles: tier ${v.tier} has both a license and a delivery '
+            'count; use one',
+          );
+        }
+        usedLicenses.add(licenseId);
+      }
+    }
+    for (final id in licenseIds.difference(usedLicenses)) {
+      throw ConfigException('licenses: "$id" does not unlock any vehicle');
+    }
     for (final v in vehicles) {
       for (final id in v.allowedRoutes) {
         if (!routeIds.contains(id)) {
@@ -202,6 +256,7 @@ EconomySettings _parseSettings(_Reader r) => EconomySettings(
   accidentCostShareOfPrice: r.number('accidentCostShareOfPrice'),
   maxLineHaulKm: r.number('maxLineHaulKm'),
   startingGarageSlots: r.integer('startingGarageSlots'),
+  resaleShareOfPrice: r.number('resaleShareOfPrice'),
 );
 
 VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
@@ -220,8 +275,15 @@ VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
   smallLoadPremium: r.number('smallLoadPremium'),
   tollClass: r.string('tollClass'),
   highwayAllowed: r.boolean('highwayAllowed'),
-  unlock: r.string('unlock'),
+  unlockLicenseId: r.optionalString('unlockLicense'),
+  unlockDeliveries: r.integer('unlockDeliveries'),
   allowedRoutes: List.unmodifiable(r.stringList('allowedRoutes')),
+);
+
+LicenseSpec _parseLicense(_Reader r) => LicenseSpec(
+  id: r.string('id'),
+  name: r.string('name'),
+  priceTk: r.integer('priceTk'),
 );
 
 CargoSpec _parseCargo(_Reader r) => CargoSpec(
@@ -303,6 +365,16 @@ class _Reader {
     final value = _require(key);
     if (value is! String) {
       throw ConfigException('$path.$key must be a string, got "$value"');
+    }
+    return value;
+  }
+
+  /// A string, or null when the key is absent or null.
+  String? optionalString(String key) {
+    final value = _map[key];
+    if (value == null) return null;
+    if (value is! String) {
+      throw ConfigException('$path.$key must be a string or null, got "$value"');
     }
     return value;
   }
