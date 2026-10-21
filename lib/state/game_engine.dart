@@ -12,6 +12,7 @@ import '../data/id_generator.dart';
 import '../data/models/models.dart';
 import '../data/repositories/change_committer.dart';
 import '../data/repositories/save_database.dart';
+import 'game_snapshot.dart';
 
 /// Runs the game on top of the save: loads the state, lets the simulator move
 /// it forward, and saves the result through the [ChangeCommitter].
@@ -47,9 +48,40 @@ class GameEngine extends ChangeNotifier {
 
   TurboClock? _turbo;
   Future<void> _tail = Future.value();
+  GameSnapshot? _snapshot;
+
+  /// The clock this engine runs on. The UI clock uses the same one.
+  Clock get clock => _clock;
 
   /// The saved company, or null before a game exists.
   Company? get company => _db.company.load();
+
+  /// A read-only copy of the game for the screens. The same instance is
+  /// returned until the engine next notifies its listeners, so
+  /// `context.select((GameEngine e) => e.snapshot)` rebuilds only on a real
+  /// change.
+  GameSnapshot get snapshot => _snapshot ??= _buildSnapshot();
+
+  GameSnapshot _buildSnapshot() {
+    final vehicles = _db.vehicles.all()
+      ..sort((a, b) {
+        final byTime = a.purchasedAt.compareTo(b.purchasedAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
+    return GameSnapshot(
+      company: _db.company.load(),
+      vehicles: vehicles,
+      activeTrips: _db.trips.unsettled(),
+      routeStates: _db.routeStates.all(),
+      settings: config.settings,
+    );
+  }
+
+  @override
+  void notifyListeners() {
+    _snapshot = null;
+    super.notifyListeners();
+  }
 
   /// The Turbo Start multiplier a dispatch would get right now.
   double get turboSpeed => _turbo?.speed ?? 1;
@@ -74,6 +106,7 @@ class GameEngine extends ChangeNotifier {
       accumulated: saved.turboElapsed,
     )..resume();
     await _advance();
+    notifyListeners();
   });
 
   /// Erases the save and starts a new company with the starting cash.

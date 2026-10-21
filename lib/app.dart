@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/config/economy_config.dart';
 import 'state/game_engine.dart';
 import 'state/game_loop.dart';
+import 'state/ui_clock.dart';
 import 'ui/theme/app_theme.dart';
 
 /// The app root. It owns the [GameLoop] (ticks while the widget lives) and
@@ -29,16 +30,19 @@ class VehicleManagerApp extends StatefulWidget {
 
 class _VehicleManagerAppState extends State<VehicleManagerApp> {
   late final GameLoop _loop;
+  late final UiClock _uiClock;
 
   @override
   void initState() {
     super.initState();
     _loop = GameLoop(widget.engine, interval: widget.loopInterval)..start();
+    _uiClock = UiClock(widget.engine.clock)..start();
   }
 
   @override
   void dispose() {
     _loop.stop();
+    _uiClock.dispose();
     super.dispose();
   }
 
@@ -48,6 +52,7 @@ class _VehicleManagerAppState extends State<VehicleManagerApp> {
       providers: [
         Provider<EconomyConfig>.value(value: widget.config),
         ChangeNotifierProvider<GameEngine>.value(value: widget.engine),
+        ChangeNotifierProvider<UiClock>.value(value: _uiClock),
       ],
       child: MaterialApp(
         title: 'Vehicle Manager Bangladesh',
@@ -66,8 +71,12 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final engine = context.watch<GameEngine>();
-    final company = engine.company;
+    // The snapshot changes when the game does; the UI clock makes the turbo
+    // speed (which moves with time) look at the clock again.
+    final snapshot = context.select((GameEngine e) => e.snapshot);
+    context.watch<UiClock>();
+    final engine = context.read<GameEngine>();
+    final company = snapshot.company;
     return Scaffold(
       appBar: AppBar(title: const Text('Vehicle Manager Bangladesh')),
       body: Center(

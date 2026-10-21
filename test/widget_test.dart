@@ -60,6 +60,27 @@ void main() {
     expect(find.text('Turbo 20x'), findsOneWidget);
   });
 
+  testWidgets('the turbo line follows the clock through the UI clock', (
+    tester,
+  ) async {
+    final clock = ManualClock();
+    late GameEngine engine;
+    await tester.runAsync(() async {
+      db = await folder.open();
+      engine = GameEngine(config: config, database: db, clock: clock);
+      await engine.startNewGame('A');
+    });
+    addTearDown(engine.dispose);
+    await tester.pumpWidget(VehicleManagerApp(config: config, engine: engine));
+    expect(find.text('Turbo 20x'), findsOneWidget);
+
+    // 20 minutes of foreground play moves the turbo to its second phase. The
+    // screen notices on the next UI clock second, with no game change.
+    clock.advance(const Duration(minutes: 20));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Turbo 10x'), findsOneWidget);
+  });
+
   testWidgets('without a game it says so', (tester) async {
     await tester.runAsync(() async => db = await folder.open());
     final engine = GameEngine(config: config, database: db, clock: ManualClock());

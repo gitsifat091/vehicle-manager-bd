@@ -374,10 +374,7 @@ void main() {
         final until = (outcome.plan as DispatchWaiting).until;
         expect(db.vehicles.get('v1')!.availableAt, until);
         expect(engine.turboBonus, const Duration(minutes: 640));
-        expect(
-          (until.difference(t0) + engine.turboBonus).inMinutes % 24,
-          0,
-        );
+        expect((until.difference(t0) + engine.turboBonus).inMinutes % 24, 0);
         expect(until.isAfter(clock.now()), true);
 
         // When the day starts, the next tick sends it out by itself.

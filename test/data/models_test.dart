@@ -68,10 +68,27 @@ void main() {
         Company make(Set<String> p) =>
             Company(name: 'A', cash: 1, createdAt: t0, permits: p);
         expect(make({'light', 'heavy'}), make({'heavy', 'light'}));
-        expect(make({'light', 'heavy'}).hashCode, make({'heavy', 'light'}).hashCode);
+        expect(
+          make({'light', 'heavy'}).hashCode,
+          make({'heavy', 'light'}).hashCode,
+        );
         expect(make({'light'}) == make({'heavy'}), false);
         expect(make({'light'}) == make({}), false);
       });
+    });
+  });
+
+  group('Trip.progressAt', () {
+    test('is linear between departure and arrival, and clamped outside', () {
+      final trip = sampleTrip(); // 9 minutes from t0
+      expect(trip.progressAt(t0), 0);
+      expect(
+        trip.progressAt(t0.add(const Duration(minutes: 3))),
+        closeTo(1 / 3, 1e-9),
+      );
+      expect(trip.progressAt(t0.add(const Duration(minutes: 9))), 1);
+      expect(trip.progressAt(t0.subtract(const Duration(minutes: 1))), 0);
+      expect(trip.progressAt(t0.add(const Duration(days: 1))), 1);
     });
   });
 

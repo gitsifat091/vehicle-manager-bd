@@ -95,6 +95,15 @@ class Trip {
   /// True when the trip has reached its destination at [now].
   bool hasArrivedBy(DateTime now) => !arriveAt.isAfter(now);
 
+  /// How far along the trip is at [now], from 0 (just left) to 1 (arrived),
+  /// worked out from the timestamps only.
+  double progressAt(DateTime now) {
+    final total = arriveAt.difference(departAt).inMicroseconds;
+    if (total <= 0) return 1;
+    final done = now.difference(departAt).inMicroseconds;
+    return (done / total).clamp(0.0, 1.0);
+  }
+
   Trip copyWith({int? revenue, TripCosts? costs, bool? settled}) {
     return Trip(
       id: id,
