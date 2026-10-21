@@ -1,0 +1,115 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vehicle_manager_bd/core/config/economy_config.dart';
+
+import '../test_config.dart';
+
+/// Decodes the real economy.json, lets [edit] change it, and re-encodes.
+String edited(void Function(Map<String, dynamic> json) edit) {
+  final json = jsonDecode(readEconomyJson()) as Map<String, dynamic>;
+  edit(json);
+  return jsonEncode(json);
+}
+
+Matcher configError(String fragment) => throwsA(
+  isA<ConfigException>().having(
+    (e) => e.message,
+    'message',
+    contains(fragment),
+  ),
+);
+
+void main() {
+  group('EconomyConfig.parse', () {
+    final config = loadDefaultConfig();
+
+    test('reads the real economy.json', () {
+      expect(config.currency, 'BDT');
+      expect(config.vehicles, hasLength(12));
+      expect(config.cargo, hasLength(12));
+      expect(config.routes, hasLength(16));
+      expect(config.tolls, hasLength(7));
+      expect(config.settings.dieselPricePerLitre, 135);
+      expect(config.settings.startingCash, 1500000);
+    });
+
+    test('looks things up by tier, id and name', () {
+      expect(config.vehicleByTier(6).name, 'Jamuna Open');
+      expect(config.routeById('R05').distanceKm, 250);
+      expect(config.routeById('R01').haulType, HaulType.local);
+      expect(config.cargoByName('Rice').rateFactor, 1);
+      expect(config.tollFor('Medium truck', 'Meghna+Gumti'), 800);
+    });
+
+    test('unknown lookups throw ArgumentError', () {
+      expect(() => config.vehicleByTier(99), throwsArgumentError);
+      expect(() => config.routeById('R99'), throwsArgumentError);
+      expect(() => config.cargoByName('Gold'), throwsArgumentError);
+      expect(() => config.tollFor('Medium truck', 'Moon'), throwsArgumentError);
+    });
+
+    test('lists and maps are unmodifiable', () {
+      expect(() => config.vehicles.removeLast(), throwsUnsupportedError);
+      expect(() => config.tolls['Light']!['None'] = 1, throwsUnsupportedError);
+    });
+
+    test('rejects text that is not JSON', () {
+      expect(() => EconomyConfig.parse('not json'), configError('not valid'));
+    });
+
+    test('names a missing settings field', () {
+      final text = edited((j) => j['settings'].remove('dieselPricePerLitre'));
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('economy.json.settings.dieselPricePerLitre is missing'),
+      );
+    });
+
+    test('names a missing vehicle field with its list index', () {
+      final text = edited((j) => j['vehicles'][3].remove('speedKmh'));
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('economy.json.vehicles[3].speedKmh is missing'),
+      );
+    });
+
+    test('rejects a wrong type', () {
+      final text = edited((j) => j['routes'][0]['distanceKm'] = 'far');
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('routes[0].distanceKm must be a number'),
+      );
+    });
+
+    test('rejects a missing top-level section', () {
+      final text = edited((j) => j.remove('tolls'));
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('economy.json.tolls is missing'),
+      );
+    });
+
+    test('rejects an unknown haul type', () {
+      final text = edited((j) => j['routes'][0]['haulType'] = 'air');
+      expect(() => EconomyConfig.parse(text), configError('haulType'));
+    });
+
+    test('rejects a vehicle with an unknown toll class', () {
+      final text = edited((j) => j['vehicles'][0]['tollClass'] = 'Rocket');
+      expect(() => EconomyConfig.parse(text), configError('Rocket'));
+    });
+
+    test('rejects a route crossing missing from the toll table', () {
+      final text = edited((j) => j['routes'][0]['crossing'] = 'Atlantis');
+      expect(() => EconomyConfig.parse(text), configError('Atlantis'));
+    });
+
+    test('rejects duplicate tiers and route ids', () {
+      final dupTier = edited((j) => j['vehicles'][1]['tier'] = 1);
+      expect(() => EconomyConfig.parse(dupTier), configError('duplicate tier'));
+      final dupRoute = edited((j) => j['routes'][1]['id'] = 'M01');
+      expect(() => EconomyConfig.parse(dupRoute), configError('duplicate id'));
+    });
+  });
+}
