@@ -2,9 +2,11 @@ import 'package:hive_ce/hive_ce.dart';
 
 import '../adapters/game_adapters.dart';
 import '../models/models.dart';
+import 'app_settings_repository.dart';
 import 'repositories.dart';
 
-/// The local save: six Hive boxes and a repository for each.
+/// The local save: six Hive boxes and a repository for each, plus a seventh
+/// for the device settings (language, theme) that a new game does not erase.
 ///
 /// Hive must already point at a folder. Tests call [openAt] with a temp
 /// folder; the app uses the platform helper in lib/platform/, which picks the
@@ -19,6 +21,7 @@ class SaveDatabase {
     required this.routeStates,
     required this.trips,
     required this.pending,
+    required this.settings,
   });
 
   static const companyBox = 'company';
@@ -27,6 +30,7 @@ class SaveDatabase {
   static const routeStatesBox = 'route_states';
   static const tripsBox = 'trips';
   static const pendingBox = 'pending_change';
+  static const settingsBox = 'app_settings';
 
   final CompanyRepository company;
   final VehicleRepository vehicles;
@@ -34,6 +38,9 @@ class SaveDatabase {
   final RouteStateRepository routeStates;
   final TripRepository trips;
   final PendingChangeRepository pending;
+
+  /// Device settings. Not part of a game, so [clearAll] leaves them alone.
+  final AppSettingsRepository settings;
 
   /// Points Hive at [path] and opens the save there.
   static Future<SaveDatabase> openAt(String path) async {
@@ -55,10 +62,12 @@ class SaveDatabase {
       pending: PendingChangeRepository(
         await Hive.openBox<ChangeSet>(pendingBox),
       ),
+      settings: AppSettingsRepository(await Hive.openBox<String>(settingsBox)),
     );
   }
 
-  /// Erases every record, for "new game".
+  /// Erases every record of the game, for "new game". The device settings
+  /// stay.
   Future<void> clearAll() async {
     await company.clear();
     await vehicles.clear();
@@ -76,5 +85,6 @@ class SaveDatabase {
     await routeStates.box.close();
     await trips.box.close();
     await pending.box.close();
+    await settings.box.close();
   }
 }

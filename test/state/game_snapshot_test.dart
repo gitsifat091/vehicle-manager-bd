@@ -134,11 +134,7 @@ void main() {
     // No day number: the day is worked out from the timestamp, so today's
     // demand is empty and the vehicle has to wait for tomorrow.
     await db.routeStates.put(
-      RouteState(
-        routeId: 'R01',
-        demandRemainingT: 0,
-        updatedAt: clock.now(),
-      ),
+      RouteState(routeId: 'R01', demandRemainingT: 0, updatedAt: clock.now()),
     );
     await engine.assignVehicle('w', routeId: 'R01', cargoName: 'General dry');
 

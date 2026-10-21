@@ -1,0 +1,29 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Vehicle Manager Bangladesh",
+  "@appTitle": {
+    "description": "The name of the app, shown in the title bar and the task switcher."
+  },
+
+  "noGameYet": "No game yet",
+  "@noGameYet": {
+    "description": "Temporary text on the placeholder home screen when no company exists."
+  },
+
+  "cashLine": "Cash: {amount}",
+  "@cashLine": {
+    "description": "The company's cash. The amount is already formatted as money.",
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "turboLine": "Turbo Start speed: {speed} times",
+  "@turboLine": {
+    "description": "How many times faster than normal the game runs during Turbo Start. The speed is already formatted.",
+    "placeholders": {
+      "speed": {"type": "String"}
+    }
+  }
+}

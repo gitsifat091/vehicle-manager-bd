@@ -19,6 +19,18 @@ void main() {
     expect(services.config.version, loadDefaultConfig().version);
     expect(services.config.vehicles, hasLength(12));
     expect(services.engine.company, isNull, reason: 'no game on a new save');
+    expect(services.settings.languageCode, isNull);
+  });
+
+  test('device settings come from the same save folder', () async {
+    var db = await folder.open();
+    await db.settings.setLanguageCode('bn');
+    await db.close();
+
+    db = await folder.open();
+    final services = await bootstrap(database: db, clock: ManualClock());
+    addTearDown(services.engine.dispose);
+    expect(services.settings.languageCode, 'bn');
   });
 
   test('starts the engine on an existing save', () async {

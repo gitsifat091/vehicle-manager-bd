@@ -57,6 +57,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # Runs the built-in gen-l10n tool on the ARB files in lib/l10n. No package
+  # and no build_runner: it writes plain Dart next to the ARB files.
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

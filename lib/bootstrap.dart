@@ -5,14 +5,20 @@ import 'core/sim/clock.dart';
 import 'data/repositories/save_database.dart';
 import 'platform/app_save_database.dart';
 import 'platform/system_clock.dart';
+import 'state/app_settings.dart';
 import 'state/game_engine.dart';
 
 /// What the app needs before its first frame.
 class AppServices {
-  const AppServices({required this.config, required this.engine});
+  const AppServices({
+    required this.config,
+    required this.engine,
+    required this.settings,
+  });
 
   final EconomyConfig config;
   final GameEngine engine;
+  final AppSettings settings;
 }
 
 /// Loads the economy config, opens the save and starts the engine, which
@@ -30,5 +36,9 @@ Future<AppServices> bootstrap({
   final db = database ?? await openAppSaveDatabase();
   final engine = GameEngine(config: config, database: db, clock: clock);
   await engine.start();
-  return AppServices(config: config, engine: engine);
+  return AppServices(
+    config: config,
+    engine: engine,
+    settings: AppSettings(db.settings),
+  );
 }

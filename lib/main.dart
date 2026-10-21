@@ -7,6 +7,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final services = await bootstrap();
   runApp(
-    VehicleManagerApp(config: services.config, engine: services.engine),
+    VehicleManagerApp(
+      config: services.config,
+      engine: services.engine,
+      settings: services.settings,
+    ),
   );
 }
