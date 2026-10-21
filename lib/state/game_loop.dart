@@ -9,6 +9,12 @@ import 'game_engine.dart';
 ///
 /// It is a slow timer, not a frame loop: trips are finished by timestamps, so
 /// a tick only has to notice that some have arrived.
+///
+/// Foreground means the app is on screen: `resumed` and `inactive`. On a
+/// desktop a window that lost focus is `inactive`, and it keeps ticking and
+/// keeps counting Turbo Start time (on Android `inactive` is the notification
+/// shade or a dialog). Only `hidden`, `paused` and `detached` (minimised,
+/// backgrounded, closing) freeze the turbo and stop the timer.
 class GameLoop with WidgetsBindingObserver {
   GameLoop(this.engine, {this.interval = const Duration(seconds: 3)});
 

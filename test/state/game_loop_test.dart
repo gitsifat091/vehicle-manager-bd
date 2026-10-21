@@ -1,7 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
 import 'package:vehicle_manager_bd/state/game_engine.dart';
 import 'package:vehicle_manager_bd/state/game_loop.dart';
+
+import '../data/save_test_helper.dart';
+import '../support/sim_support.dart';
 
 /// Counts what the loop asks of the engine.
 class FakeEngine extends Fake implements GameEngine {
@@ -113,5 +117,82 @@ void main() {
     await settle(60);
     expect(engine.resumes, 0);
     expect(engine.ticks, 0);
+  });
+
+  group('Turbo Start time with the real engine', () {
+    final folder = SaveFolder()..register();
+    late ManualClock clock;
+    late SaveDatabase db;
+    late GameEngine real;
+    late GameLoop realLoop;
+
+    setUp(() async {
+      clock = ManualClock();
+      db = await folder.open();
+      real = GameEngine(config: quietConfig(), database: db, clock: clock);
+      await real.startNewGame('Test Ltd');
+      // The timer never fires in these tests; only the lifecycle matters.
+      realLoop = GameLoop(real, interval: const Duration(hours: 1))..start();
+    });
+
+    tearDown(() {
+      realLoop.stop();
+      real.dispose();
+    });
+
+    test('a desktop window that lost focus keeps counting', () async {
+      clock.advance(const Duration(minutes: 2));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.inactive);
+      await settle(20);
+      clock.advance(const Duration(minutes: 3));
+      expect(real.turboElapsed, const Duration(minutes: 5));
+      expect(real.turboSpeed, 20);
+    });
+
+    test('hiding the window freezes it, and the time is saved', () async {
+      clock.advance(const Duration(minutes: 2));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.inactive);
+      clock.advance(const Duration(minutes: 3));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.hidden);
+      await settle(60);
+
+      // Time spent inactive counted; nothing counts once hidden.
+      expect(db.company.load()!.turboElapsed, const Duration(minutes: 5));
+      clock.advance(const Duration(hours: 2));
+      expect(real.turboElapsed, const Duration(minutes: 5));
+      expect(real.turboSpeed, 20);
+    });
+
+    test('hidden then paused (what Android sends) freezes it once', () async {
+      clock.advance(const Duration(minutes: 4));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.hidden);
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await settle(60);
+      clock.advance(const Duration(hours: 1));
+      expect(real.turboElapsed, const Duration(minutes: 4));
+    });
+
+    test('resuming after being hidden counts again from there', () async {
+      clock.advance(const Duration(minutes: 5));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.hidden);
+      await settle(60);
+      clock.advance(const Duration(hours: 3));
+
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await settle(60);
+      clock.advance(const Duration(minutes: 15));
+      expect(real.turboElapsed, const Duration(minutes: 20));
+      expect(real.turboSpeed, 10);
+    });
+
+    test('focus lost and regained never double counts', () async {
+      clock.advance(const Duration(minutes: 1));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.inactive);
+      clock.advance(const Duration(minutes: 1));
+      realLoop.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await settle(60);
+      clock.advance(const Duration(minutes: 1));
+      expect(real.turboElapsed, const Duration(minutes: 3));
+    });
   });
 }

@@ -1,34 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
-import 'ui/theme/app_theme.dart';
+import 'app.dart';
+import 'bootstrap.dart';
 
-void main() {
-  runApp(const VehicleManagerApp());
-}
-
-class VehicleManagerApp extends StatelessWidget {
-  const VehicleManagerApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Vehicle Manager Bangladesh',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      home: const PlaceholderScreen(),
-    );
-  }
-}
-
-// Temporary home screen until the map screen exists (Milestone 4).
-class PlaceholderScreen extends StatelessWidget {
-  const PlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Vehicle Manager Bangladesh')),
-      body: const Center(child: Text('Coming soon')),
-    );
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final services = await bootstrap();
+  runApp(
+    VehicleManagerApp(config: services.config, engine: services.engine),
+  );
 }
