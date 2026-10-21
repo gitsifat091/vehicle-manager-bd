@@ -6,9 +6,10 @@ Last updated: 2026-10-21
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done and pushed, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling and vehicle unlocks as rules (decisions below, rules and tests only, no screens). 296 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestones 1, 2 and 3 are done and pushed, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 304 tests pass, `flutter analyze` is clean. Economy config is version 0.4
 - The engine and game loop are not wired into the app yet. `main.dart` shows a placeholder screen
-- Next: Milestone 4 (screens)
+- Balance work is paused until Milestone 5 (see open question 4)
+- Next: Milestone 4 (screens). Its plan is waiting for approval
 
 ## Milestones
 
@@ -17,7 +18,7 @@ Last updated: 2026-10-21
 | 1 | Config loader, economy engine, golden tests | Done |
 | 2 | Data models, Hive adapters, repositories | Done |
 | 3 | Clock, turbo, dispatch, settlement, offline catch-up, crash safety | Done |
-| 4 | Screens: map, garage, buy with demand preview, assign route, finance | Next |
+| 4 | Screens: map, garage, buy with demand preview, assign route, finance. Also: selling with a swap hint from `swapPaybackHours`, permit purchase through `ChangeSet` (`permitsAfter`), the garage slot count on the buy screen | Next |
 | 5 | Terminals, demand regeneration, overload slider, fitness timer | |
 | 6 | Events and checklist | |
 | 7 | Localization, notifications, polish, Android release | |
@@ -75,7 +76,12 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 1. **Post-turbo income gap.** Policy B earns Tk 38.6 lakh in hour 1 (sheet: about 25 lakh), then Tk 5.3 lakh in hour 2. With the unlock rules B buys a Sathi Plus first (tier 3 is locked until 5 deliveries) and fills the 6 slots at a median of minute 59, so the limit after the turbo is slots, not cash: in 13 of 20 seeds B cannot buy anything after minute 60 and holds Tk 11 lakh at hour 3. Plan a checklist reward around the 1 to 2 hour mark (Milestone 6); a free garage slot or a discount on the first terminal would fit
 2. Overloading on routes with no weighbridge is very profitable (2.3x). Plan a random mobile-check event (Milestone 6)
 3. **R01 demand.** One Sathi Plus on R01 moves 25.7 t per game day at any speed, so R01 (60 t a day) holds two of them plus a small van, and a third pickup waits for the next day. Under the 6-slot cap policies A and B never run R01 dry; policy D does at minute 80 (a Sathi Plus parcel van and two Bijli Cargos beside the starter), but not in the last hour. No pacing change needed. The sheet only checks this statically ("vehicles before demand runs out")
-4. **The cap fills early and cash piles up; selling and permits are partial sinks.** The tier 1 limit and the cap end the runaway (before: 166 vans, Tk 60 lakh in hour 1; then 43 Bijli Cargos, Tk 97 lakh). Buyers reach the 6 slots between minute 0 and 59 and A and D hold Tk 38 to 41 lakh of idle cash at hour 3. Policy D beats A on every measure, so cheapest-first is not the best play. Policy E (selling at 0.6) turns the idle cash into upgrades: Tk 59.4 lakh income against D's 42.6, and Tk 6.2 lakh against 3.2 in hour 3. But every swap loses 40% of the sold price, so at resale value E ends behind D (Tk 48.1 against 58.8 lakh); it would catch up after about 3.6 more hours at 1x (loss Tk 10.7 lakh over a gain of about Tk 3 lakh an hour). Resale 0.5 or 0.7 moves that gap to Tk 17.1 or 6.4 lakh and the income lead stays. Selling pays off over hours, not in the first hour. Permits (proposed Tk 34 lakh in total) are the other sink, about the size of A's and D's idle cash, but the bots do not buy them. Still open for Milestone 5: price slot expansion and the first terminal (Tk 8 lakh) so cash has somewhere to go, then rerun the tool
+4. **The mid-game depends on terminals. Balance work is paused until Milestone 5.** The tier 1 limit and the 6-slot cap ended the runaway (before: 166 vans, Tk 60 lakh in hour 1; then 43 Bijli Cargos, Tk 97 lakh). The 3-hour table above shows cheapest-first (A) is not the best play and selling (E) trades resale loss for income. Six-hour medians (`dart run tool/first_hours_sim.dart 6 20 BEFGH`, Tk lakh):
+   - **B** (cheapest, tier 3 up): income 38.6 in hour 1, then a flat 5.3 an hour. The garage is full at minute 59 and nothing is bought for the next 5 hours (longest stretch 301 minutes), leaving 26.1 idle at hour 6. Its cash passes the Tk 8 lakh first terminal at about hour 2.4 (5.9 after hour 2, growing about 5 an hour)
+   - **E** (sells and upgrades): income 47.5, 5.7, 6.2, 6.6, 7.2 and 8.0 by hour, 11 sales, cash held at 3 to 6, a purchase or sale about every 74 minutes. Total income 80.2 against B's 64.1, but net worth at resale value 53.2 against B's 65.7
+   - **F** (E plus permits) bought no permit and equals E. On the Dhaka Local routes no permit-locked vehicle beats the worst one, because large vehicles do not fit them (a Pahari Tipper holds 0.0 to 0.8 per Local route)
+   - **With Line hauls** (diagnostic G = E, H = F, an attentive player): total income 109.5 and 110.1. G stalls from hour 4 with 36 idle. H buys one permit (Light) and one Meghna 14 and ends lower in net worth at resale value (65.7 against 82.5)
+   - **Conclusion:** selling and permits do not carry the mid-game on Local routes. Large vehicles and Line hauls need terminals. In Milestone 5, validate the mid-game with a terminal-buying policy in the tool, and price terminals and slot expansion for the idle cash. No balance number changes until then
 
 ## Known gaps (fix before release, not now)
 
