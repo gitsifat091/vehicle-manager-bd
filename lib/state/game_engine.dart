@@ -57,6 +57,10 @@ class GameEngine extends ChangeNotifier {
   /// Foreground play time used by the Turbo Start so far.
   Duration get turboElapsed => _turbo?.elapsed ?? Duration.zero;
 
+  /// Game clock time earned by the Turbo Start so far. The game clock is real
+  /// time plus this, so game days run faster while the turbo lasts.
+  Duration get turboBonus => _schedule.bonusAt(turboElapsed);
+
   /// Opens the saved game: finishes any interrupted save, starts counting
   /// foreground time, and catches up on everything that happened while away.
   /// Does nothing if there is no saved company yet.
@@ -80,7 +84,8 @@ class GameEngine extends ChangeNotifier {
       Company.newGame(config: config, name: name, now: now),
     );
     await _db.routeStates.putAll([
-      for (final route in config.routes) RouteState.initial(route, now),
+      for (final route in config.routes)
+        RouteState.initial(route, now, gameDay: 0),
     ]);
     _turbo = TurboClock(schedule: _schedule, clock: _clock)..resume();
     notifyListeners();
@@ -142,6 +147,7 @@ class GameEngine extends ChangeNotifier {
       vehicleId: vehicle.id,
       now: _clock.now(),
       turboSpeed: turboSpeed,
+      turboBonus: turboBonus,
     );
     final change = outcome.change;
     if (change != null) {
@@ -158,6 +164,7 @@ class GameEngine extends ChangeNotifier {
       world: _loadWorld(),
       now: _clock.now(),
       turboSpeed: turbo.speed,
+      turboBonus: _schedule.bonusAt(turbo.elapsed),
     );
     if (!change.isEmpty) {
       await _committer.commit(change);

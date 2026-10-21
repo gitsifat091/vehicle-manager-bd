@@ -47,6 +47,23 @@ class TurboSchedule {
   }
 
   bool isActiveAt(Duration elapsed) => elapsed < total;
+
+  /// The extra game clock time earned by the turbo after [elapsed] of
+  /// foreground play. Game clock = real time + bonus: while a phase runs at
+  /// speed s, the game clock gains (s - 1) extra for every real unit, so game
+  /// days and demand resets speed up together with the trips. It stops growing
+  /// when the turbo is over (640 minutes with the default phases).
+  Duration bonusAt(Duration elapsed) {
+    var micros = 0.0;
+    var from = Duration.zero;
+    for (final phase in phases) {
+      if (elapsed <= from) break;
+      final to = elapsed < phase.end ? elapsed : phase.end;
+      micros += (to - from).inMicroseconds * (phase.speed - 1);
+      from = phase.end;
+    }
+    return Duration(microseconds: micros.round());
+  }
 }
 
 /// Counts foreground play time for the Turbo Start.

@@ -118,6 +118,7 @@ class RouteStateAdapter extends TypeAdapter<RouteState> {
       routeId: f[0] as String,
       demandRemainingT: (f[1] as num).toDouble(),
       updatedAt: decodeInstant(f[2]),
+      gameDay: f[3] as int?,
     );
   }
 
@@ -127,6 +128,7 @@ class RouteStateAdapter extends TypeAdapter<RouteState> {
       0: obj.routeId,
       1: obj.demandRemainingT,
       2: encodeInstant(obj.updatedAt),
+      if (obj.gameDay != null) 3: obj.gameDay,
     });
   }
 }

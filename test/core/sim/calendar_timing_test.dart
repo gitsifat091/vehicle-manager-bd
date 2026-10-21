@@ -56,6 +56,92 @@ void main() {
     });
   });
 
+  group('GameCalendar with a turbo bonus', () {
+    GameCalendar withBonus(
+      Duration bonus, {
+      DateTime? now,
+      double turboSpeed = 1,
+    }) {
+      return GameCalendar.fromSettings(
+        config.settings,
+        t0,
+        bonus: bonus,
+        now: now,
+        turboSpeed: turboSpeed,
+      );
+    }
+
+    test('the bonus moves the game clock forward', () {
+      final calendar = withBonus(const Duration(minutes: 10));
+      expect(calendar.dayIndex(t0), 0);
+      expect(calendar.dayIndex(t0.add(const Duration(minutes: 13))), 0);
+      expect(calendar.dayIndex(t0.add(const Duration(minutes: 14))), 1);
+    });
+
+    test('the full turbo bonus is 26 days and 16 minutes of game clock', () {
+      final calendar = withBonus(const Duration(minutes: 640));
+      expect(calendar.dayIndex(t0), 26);
+    });
+
+    test('day start and day index agree', () {
+      final calendar = withBonus(const Duration(minutes: 10));
+      final start = calendar.dayStart(1);
+      expect(start, t0.add(const Duration(minutes: 14)));
+      expect(calendar.dayIndex(start), 1);
+      expect(
+        calendar.dayIndex(start.subtract(const Duration(microseconds: 1))),
+        0,
+      );
+    });
+
+    test('with no turbo ahead the next day start is the exact boundary', () {
+      final calendar = withBonus(
+        const Duration(minutes: 10),
+        now: t0.add(const Duration(minutes: 5)),
+      );
+      expect(
+        calendar.nextDayStart(t0.add(const Duration(minutes: 5))),
+        t0.add(const Duration(minutes: 14)),
+      );
+    });
+
+    test('a boundary ahead arrives turboSpeed times sooner', () {
+      // The game clock reads 5 min of the 24 minute day: 19 game minutes left,
+      // which take 19 / 20 = 0.95 real minutes at 20x.
+      final now = t0.add(const Duration(minutes: 5));
+      final calendar = withBonus(Duration.zero, now: now, turboSpeed: 20);
+      expect(calendar.nextDayStart(now), now.add(const Duration(seconds: 57)));
+    });
+
+    test('a boundary already behind now is not pulled closer', () {
+      final now = t0.add(const Duration(minutes: 40));
+      final calendar = withBonus(Duration.zero, now: now, turboSpeed: 20);
+      final earlier = t0.add(const Duration(minutes: 10));
+      expect(
+        calendar.nextDayStart(earlier),
+        t0.add(const Duration(minutes: 24)),
+      );
+    });
+
+    test('the projected boundary is never at or before the start time', () {
+      final now = t0.add(const Duration(minutes: 23, seconds: 59));
+      final calendar = withBonus(Duration.zero, now: now, turboSpeed: 20);
+      expect(calendar.nextDayStart(now).isAfter(now), true);
+    });
+
+    test('waking at the projected instant lands in the next day', () {
+      final now = t0.add(const Duration(minutes: 5));
+      final calendar = withBonus(Duration.zero, now: now, turboSpeed: 20);
+      final wake = calendar.nextDayStart(now);
+      // Foreground turbo went on: the bonus gained 19 for each real minute.
+      final gained = Duration(
+        microseconds: (wake.difference(now).inMicroseconds * 19),
+      );
+      final later = withBonus(gained);
+      expect(later.dayIndex(wake), 1);
+    });
+  });
+
   group('realTripDuration', () {
     final settings = config.settings;
 

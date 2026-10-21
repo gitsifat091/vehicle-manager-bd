@@ -130,7 +130,7 @@ If a code change breaks these, either the code is wrong or the spreadsheet must 
 - On app open: settle every trip whose arriveAt has passed, in time order, then auto-redispatch Local hauls back to back (each new trip departs at the previous arriveAt). A per-vehicle step cap stops runaway catch-up; the rest finishes on the next ticks
 - While the app is open a slow timer (about 3 seconds) settles due trips and redispatches Local hauls
 - Turbo Start: 20x for the first 20 minutes of foreground play, 10x until 40, 5x until 60, then 1x (values from config). Only foreground time counts: it is stored in `Company.turboElapsed` and frozen when the app is paused
-- A game day is 24 game hours (24 real minutes at 60 game minutes per real minute), counted from the company's creation. Turbo does not stretch it. Route demand resets to `dailyDemandT` at each day boundary. A vehicle that finds no demand waits for the next day; if less than a full load is left it carries what is left
+- A game day is 24 game hours (24 minutes of game clock at 60 game minutes per real minute), counted from the company's creation. The game clock is real time plus the Turbo Start bonus (`TurboSchedule.bonusAt(turboElapsed)`, 640 minutes in total with the default phases), so days and demand resets speed up with the turbo. Route demand resets to `dailyDemandT` at each day boundary, and `RouteState.gameDay` remembers the day. A vehicle that finds no demand waits for the next day; if less than a full load is left it carries what is left
 - Fines and accidents are rolled at settlement, one roll per weighbridge then one for the accident, with an injected seeded `Random`. `lib/core` never calls `DateTime.now()`: it takes a `Clock`
 - Crash safety: every save goes through `ChangeCommitter`. A `ChangeSet` of absolute values (new cash total, whole trips) is written first as the pending record, then applied, then cleared. On start the pending record is finished, so a trip is never paid twice or lost
 
@@ -158,6 +158,7 @@ Out (later): multiplayer, auctions, long-haul contracts, bus mode, waterways, ad
 
 ## Working style for Claude Code
 
+- Read `PROJECT_STATUS.md` at the start of every session. Update it at the end of every milestone or decision: replace the old status, do not append a diary
 - Work in small steps that each end with `flutter analyze` and `flutter test` passing
 - Write unit tests for every function in `lib/core/economy` and `lib/core/sim` before wiring UI
 - When a balance number needs to change, change the spreadsheet and economy.json, not the Dart code

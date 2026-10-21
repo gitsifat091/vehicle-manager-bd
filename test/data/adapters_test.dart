@@ -25,6 +25,25 @@ class _OldVehicleAdapter extends TypeAdapter<Vehicle> {
   }
 }
 
+/// An older build of the route state adapter, from before game days were
+/// stored: fields 0 to 2 only.
+class _OldRouteStateAdapter extends TypeAdapter<RouteState> {
+  @override
+  final int typeId = HiveTypeIds.routeState;
+
+  @override
+  RouteState read(BinaryReader reader) => throw UnimplementedError();
+
+  @override
+  void write(BinaryWriter writer, RouteState obj) {
+    writeFields(writer, {
+      0: obj.routeId,
+      1: obj.demandRemainingT,
+      2: encodeInstant(obj.updatedAt),
+    });
+  }
+}
+
 /// A newer build that wrote a field this build has never heard of.
 class _FutureVehicleAdapter extends VehicleAdapter {
   @override
@@ -67,6 +86,7 @@ void main() {
       routeId: 'R05',
       demandRemainingT: 123.5,
       updatedAt: t0,
+      gameDay: 29,
     );
     final trip = sampleTrip();
 
@@ -131,6 +151,24 @@ void main() {
       expect(loaded.availableAt, isNull);
     },
   );
+
+  test('a route state saved before game days existed has no day', () async {
+    Hive.init(folder.dir.path);
+    Hive.registerAdapter(_OldRouteStateAdapter(), override: true);
+    final oldBox = await Hive.openBox<RouteState>('route_states');
+    await oldBox.put(
+      'R05',
+      RouteState(routeId: 'R05', demandRemainingT: 80, updatedAt: t0),
+    );
+    await Hive.close();
+    Hive.registerAdapter(RouteStateAdapter(), override: true);
+
+    final db = await folder.open();
+    final loaded = db.routeStates.get('R05')!;
+    expect(loaded.demandRemainingT, 80);
+    expect(loaded.updatedAt, t0);
+    expect(loaded.gameDay, isNull);
+  });
 
   test('a field this build does not know is ignored', () async {
     Hive.init(folder.dir.path);

@@ -64,6 +64,7 @@ void main() {
         expect(company.turboElapsed, Duration.zero);
         expect(db.routeStates.count, 16);
         expect(db.routeStates.get('R05')!.demandRemainingT, 400);
+        expect(db.routeStates.get('R05')!.gameDay, 0);
         expect(engine.turboSpeed, 20);
       },
     );
@@ -183,6 +184,93 @@ void main() {
       await engine.tick();
       expect(db.company.load()!.turboElapsed, const Duration(minutes: 60));
     });
+
+    test('the game clock bonus follows the foreground phases', () async {
+      expect(engine.turboBonus, Duration.zero);
+      clock.advance(const Duration(minutes: 1));
+      expect(engine.turboBonus, const Duration(minutes: 19));
+      clock.advance(const Duration(minutes: 19));
+      expect(engine.turboBonus, const Duration(minutes: 380));
+      clock.advance(const Duration(minutes: 40));
+      expect(engine.turboBonus, const Duration(minutes: 640));
+      clock.advance(const Duration(hours: 5));
+      expect(engine.turboBonus, const Duration(minutes: 640));
+    });
+
+    test('the bonus does not grow in the background', () async {
+      clock.advance(const Duration(minutes: 5));
+      await engine.pause();
+      clock.advance(const Duration(hours: 3));
+      expect(engine.turboBonus, const Duration(minutes: 95));
+    });
+  });
+
+  group('first hour', () {
+    // Tier 4 on R01 has 60 t of demand a day and takes 1.5 t a trip: 40 trips
+    // use the whole day. Before the game clock followed the turbo, a day was
+    // 24 real minutes even at 20x, so the pickup used up the demand within
+    // about 3 minutes and then stood still for most of the turbo window.
+    test('a pickup on R01 keeps working through the turbo window', () async {
+      await engine.startNewGame('Test Ltd');
+      await db.vehicles.put(idleVehicle('v1', 4));
+      await engine.assignVehicle(
+        'v1',
+        routeId: 'R01',
+        cargoName: 'General dry',
+      );
+
+      var waitedOnDemand = Duration.zero;
+      var lastSeen = Duration.zero;
+      // The player keeps the app open for the whole hour; the timer ticks.
+      for (var second = 10; second <= 3600; second += 10) {
+        clock.advance(const Duration(seconds: 10));
+        await engine.tick();
+        lastSeen = Duration(seconds: second);
+      }
+      expect(lastSeen, const Duration(minutes: 60));
+      expect(engine.turboSpeed, 1);
+
+      final trips = db.trips.all()
+        ..sort((a, b) => a.departAt.compareTo(b.departAt));
+      for (var i = 1; i < trips.length; i++) {
+        waitedOnDemand += trips[i].departAt.difference(trips[i - 1].arriveAt);
+      }
+
+      // 20 min at 4.2 s a trip, 20 min at 8.4 s, 20 min at 16.8 s: about 500.
+      final completed = db.company.load()!.completedTrips;
+      expect(completed, greaterThan(480));
+      // The vehicle never waits for the next day: it is always on the road,
+      // apart from the rounding of the 10 second ticks.
+      expect(waitedOnDemand, lessThan(const Duration(seconds: 1)));
+      // 60 real minutes of foreground play are 700 game clock minutes.
+      expect(db.routeStates.get('R01')!.gameDay, 29);
+    });
+
+    test('demand still limits a fleet that outruns the game day', () async {
+      // At 20x a game day is 72 real seconds and offers 0.83 t/s on R01. One
+      // pickup needs 0.36 t/s, but four together need 1.43 t/s and run dry.
+      await engine.startNewGame('Test Ltd');
+      await db.vehicles.putAll([
+        for (var i = 0; i < 4; i++) idleVehicle('v$i', 4),
+      ]);
+      for (var i = 0; i < 4; i++) {
+        await engine.assignVehicle(
+          'v$i',
+          routeId: 'R01',
+          cargoName: 'General dry',
+        );
+      }
+      for (var i = 0; i < 12; i++) {
+        clock.advance(const Duration(seconds: 10));
+        await engine.tick();
+      }
+      final trips = db.trips.all();
+      final carried = trips.fold<double>(0, (sum, t) => sum + t.loadT);
+      // 2 minutes at 20x is 40 game clock minutes: days 0 and 1, so at most
+      // 120 t, and the fleet used nearly all of it.
+      expect(carried, lessThanOrEqualTo(120 + 1e-6));
+      expect(carried, greaterThan(100));
+    });
   });
 
   group('dispatch', () {
@@ -281,10 +369,15 @@ void main() {
         expect(outcome.plan, isA<DispatchWaiting>());
         expect(db.trips.count, 0);
 
-        // Game days run from the company's creation: 24 minutes each.
+        // The game clock is real time plus the turbo bonus (640 minutes once
+        // the turbo is over). Days are 24 game clock minutes from creation.
         final until = (outcome.plan as DispatchWaiting).until;
         expect(db.vehicles.get('v1')!.availableAt, until);
-        expect(until.difference(t0).inMinutes % 24, 0);
+        expect(engine.turboBonus, const Duration(minutes: 640));
+        expect(
+          (until.difference(t0) + engine.turboBonus).inMinutes % 24,
+          0,
+        );
         expect(until.isAfter(clock.now()), true);
 
         // When the day starts, the next tick sends it out by itself.

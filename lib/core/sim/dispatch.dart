@@ -52,22 +52,28 @@ class DispatchBlocked extends DispatchPlan {
 /// The route's demand as it stands at [t]. At a game day boundary it resets to
 /// the full daily demand. A route with no saved state starts full.
 ///
-/// If [t] is earlier than the saved state, the saved state is used as it is.
+/// The returned state always has its [RouteState.gameDay] set. If [t] is
+/// earlier than the saved state, the saved state is used as it is.
 RouteState routeDemandAt({
   required RouteSpec route,
   required RouteState? saved,
   required DateTime t,
   required GameCalendar calendar,
 }) {
-  final current = saved ?? RouteState.initial(route, t);
-  if (calendar.dayIndex(t) > calendar.dayIndex(current.updatedAt)) {
+  final today = calendar.dayIndex(t);
+  final current =
+      saved ?? RouteState.initial(route, t, gameDay: today);
+  // Old saves have no day number. The day of their timestamp is the best guess.
+  final savedDay = current.gameDay ?? calendar.dayIndex(current.updatedAt);
+  if (today > savedDay) {
     return RouteState(
       routeId: route.id,
       demandRemainingT: route.dailyDemandT,
       updatedAt: t,
+      gameDay: today,
     );
   }
-  return current;
+  return current.copyWith(gameDay: savedDay);
 }
 
 /// Plans one departure of [vehicle] at [departAt] on its assigned route.

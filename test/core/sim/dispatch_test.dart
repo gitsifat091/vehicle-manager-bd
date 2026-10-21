@@ -185,6 +185,129 @@ void main() {
     });
   });
 
+  group('game days under turbo', () {
+    // The bonus the turbo has earned after 5 foreground minutes at 20x.
+    const bonus = Duration(minutes: 95);
+    final turboCalendar = GameCalendar.fromSettings(
+      config.settings,
+      t0,
+      bonus: bonus,
+      now: t0.add(const Duration(minutes: 5)),
+      turboSpeed: 20,
+    );
+    final now = t0.add(const Duration(minutes: 5));
+
+    test('the trip stores the game day it used demand from', () {
+      final r = ready(
+        planDispatch(
+          config: config,
+          calendar: turboCalendar,
+          vehicle: assignedVehicle(),
+          routeState: null,
+          departAt: now,
+          turboSpeed: 20,
+          newTripId: () => 'trip_1',
+        ),
+      );
+      // 5 real minutes + 95 bonus = 100 game clock minutes: day 4.
+      expect(r.routeState.gameDay, 4);
+    });
+
+    test('demand resets by the stored day, not by the old timestamp', () {
+      // Saved in day 3, one real minute ago. Read with today's bonus, that
+      // timestamp would also look like day 4, and the reset would be missed.
+      final state = RouteState(
+        routeId: 'R01',
+        demandRemainingT: 0,
+        updatedAt: now.subtract(const Duration(minutes: 1)),
+        gameDay: 3,
+      );
+      final r = ready(
+        planDispatch(
+          config: config,
+          calendar: turboCalendar,
+          vehicle: assignedVehicle(),
+          routeState: state,
+          departAt: now,
+          turboSpeed: 20,
+          newTripId: () => 'trip_1',
+        ),
+      );
+      expect(r.trip.loadT, 1.5);
+      expect(r.routeState.demandRemainingT, closeTo(58.5, 1e-9));
+      expect(r.routeState.gameDay, 4);
+    });
+
+    test('no reset while the stored day is still today', () {
+      final state = RouteState(
+        routeId: 'R01',
+        demandRemainingT: 0,
+        updatedAt: now.subtract(const Duration(minutes: 1)),
+        gameDay: 4,
+      );
+      final p = planDispatch(
+        config: config,
+        calendar: turboCalendar,
+        vehicle: assignedVehicle(),
+        routeState: state,
+        departAt: now,
+        turboSpeed: 20,
+        newTripId: () => 'trip_1',
+      );
+      expect(p, isA<DispatchWaiting>());
+    });
+
+    test('waiting for the next day is shortened by the turbo speed', () {
+      final state = RouteState(
+        routeId: 'R01',
+        demandRemainingT: 0,
+        updatedAt: now,
+        gameDay: 4,
+      );
+      final p = planDispatch(
+        config: config,
+        calendar: turboCalendar,
+        vehicle: assignedVehicle(),
+        routeState: state,
+        departAt: now,
+        turboSpeed: 20,
+        newTripId: () => 'trip_1',
+      );
+      // The game clock reads 100 of 120 minutes: 20 game minutes left, which
+      // is one real minute at 20x (24 real minutes at 1x).
+      expect(
+        (p as DispatchWaiting).until,
+        now.add(const Duration(minutes: 1)),
+      );
+    });
+
+    test('a save without a day number uses the day of its timestamp', () {
+      final route = config.routeById('R01');
+      final old = RouteState(
+        routeId: 'R01',
+        demandRemainingT: 5,
+        updatedAt: t0,
+      );
+      final calendar = GameCalendar.fromSettings(config.settings, t0);
+      final same = routeDemandAt(
+        route: route,
+        saved: old,
+        t: t0.add(const Duration(minutes: 10)),
+        calendar: calendar,
+      );
+      expect(same.demandRemainingT, 5);
+      expect(same.gameDay, 0);
+      final next = routeDemandAt(
+        route: route,
+        saved: old,
+        t: t0.add(const Duration(minutes: 25)),
+        calendar: calendar,
+      );
+      expect(next.demandRemainingT, 60);
+      expect(next.gameDay, 1);
+    });
+  });
+
   group('no trip', () {
     test('rejected when the vehicle may not run the route', () {
       final v = assignedVehicle(tier: 1, routeId: 'R05', cargo: 'Market goods');

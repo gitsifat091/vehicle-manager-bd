@@ -29,6 +29,36 @@ void main() {
       expect(schedule.isActiveAt(const Duration(minutes: 60)), false);
     });
 
+    test('the bonus grows by (speed - 1) per foreground minute', () {
+      Duration bonus(int minutes) =>
+          schedule.bonusAt(Duration(minutes: minutes));
+      expect(schedule.bonusAt(Duration.zero), Duration.zero);
+      expect(bonus(1), const Duration(minutes: 19));
+      expect(bonus(20), const Duration(minutes: 380));
+      expect(bonus(30), const Duration(minutes: 380 + 90));
+      expect(bonus(40), const Duration(minutes: 380 + 180));
+      expect(bonus(50), const Duration(minutes: 380 + 180 + 40));
+      expect(bonus(60), const Duration(minutes: 640));
+    });
+
+    test('the bonus stops growing when the turbo is over', () {
+      expect(
+        schedule.bonusAt(const Duration(minutes: 61)),
+        const Duration(minutes: 640),
+      );
+      expect(
+        schedule.bonusAt(const Duration(days: 3)),
+        const Duration(minutes: 640),
+      );
+    });
+
+    test('the bonus handles fractions of a minute', () {
+      expect(
+        schedule.bonusAt(const Duration(seconds: 90)),
+        const Duration(minutes: 28, seconds: 30),
+      );
+    });
+
     test('phases follow the config values', () {
       final custom = TurboSchedule.fromSettings(
         editedConfig((j) {

@@ -63,15 +63,21 @@ class GameSimulator {
   /// Events run in global time order: a trip is settled at its arrival, and
   /// the vehicle then departs again at that same instant. The loop stops when
   /// the next departure or arrival would be after [now]. [turboSpeed] is the
-  /// speed for every new trip.
+  /// speed for every new trip. [turboBonus] is the extra game clock time the
+  /// turbo has earned so far (`TurboSchedule.bonusAt`); it moves game days and
+  /// demand resets forward, so they speed up with the turbo.
   ChangeSet advance({
     required SimWorld world,
     required DateTime now,
     required double turboSpeed,
+    Duration turboBonus = Duration.zero,
   }) {
     final calendar = GameCalendar.fromSettings(
       config.settings,
       world.company.createdAt,
+      bonus: turboBonus,
+      now: now,
+      turboSpeed: turboSpeed,
     );
     final vehicles = {for (final v in world.vehicles) v.id: v};
     final routeStates = {for (final r in world.routeStates) r.routeId: r};
@@ -163,6 +169,7 @@ class GameSimulator {
     required String vehicleId,
     required DateTime now,
     required double turboSpeed,
+    Duration turboBonus = Duration.zero,
   }) {
     final matches = world.vehicles.where((v) => v.id == vehicleId);
     if (matches.isEmpty) {
@@ -185,6 +192,9 @@ class GameSimulator {
     final calendar = GameCalendar.fromSettings(
       config.settings,
       world.company.createdAt,
+      bonus: turboBonus,
+      now: now,
+      turboSpeed: turboSpeed,
     );
     final savedState = world.routeStates
         .where((r) => r.routeId == vehicle.assignedRouteId)
