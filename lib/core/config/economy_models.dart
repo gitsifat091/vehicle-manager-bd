@@ -36,6 +36,7 @@ class EconomySettings {
     required this.maxLineHaulKm,
     required this.startingGarageSlots,
     required this.resaleShareOfPrice,
+    required this.starterVehicleTier,
   });
 
   final double dieselPricePerLitre;
@@ -69,6 +70,10 @@ class EconomySettings {
 
   /// A vehicle sells for this share of its price (0 to 1). See resaleValueTk.
   final double resaleShareOfPrice;
+
+  /// The tier of the free vehicle a new company starts with. It counts toward
+  /// the garage slots and must be open from the start.
+  final int starterVehicleTier;
 }
 
 class VehicleSpec {

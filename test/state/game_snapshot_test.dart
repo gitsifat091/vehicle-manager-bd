@@ -41,7 +41,7 @@ void main() {
   });
 
   test(
-    'a new game: company, full demand on every route, 6 free slots',
+    'a new game: company, full demand on every route, 5 free slots',
     () async {
       await engine.startNewGame('Sifat Ltd');
       final s = engine.snapshot;
@@ -51,7 +51,7 @@ void main() {
       expect(s.routeStateById, hasLength(16));
       expect(s.routeStateById['R01']!.demandRemainingT, 60);
       expect(s.garageSlots, 6);
-      expect(s.freeGarageSlots, 6);
+      expect(s.freeGarageSlots, 5, reason: 'the free starter takes one slot');
     },
   );
 
@@ -84,8 +84,14 @@ void main() {
       // An empty tick does not notify, so ask for a fresh read by notifying.
       engine.notifyListeners();
       final s = engine.snapshot;
-      expect(s.vehicles.map((v) => v.id), ['also_early', 'early', 'late']);
-      expect(s.freeGarageSlots, 3);
+      // The free starter was bought at t0 too; ties break by id.
+      expect(s.vehicles.map((v) => v.id), [
+        'also_early',
+        'early',
+        'veh_1',
+        'late',
+      ]);
+      expect(s.freeGarageSlots, 2);
     },
   );
 
@@ -170,6 +176,6 @@ void main() {
     addTearDown(restarted.dispose);
     await restarted.start();
     expect(restarted.snapshot.company!.name, 'Saved');
-    expect(restarted.snapshot.vehicles.map((v) => v.id), ['v1']);
+    expect(restarted.snapshot.vehicles.map((v) => v.id), ['v1', 'veh_1']);
   });
 }

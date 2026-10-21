@@ -30,6 +30,7 @@ class GameEngine extends ChangeNotifier {
     int maxStepsPerVehicle = GameSimulator.defaultMaxStepsPerVehicle,
   }) : _db = database,
        _clock = clock,
+       _newId = newId ?? ((prefix) => newIdAt(prefix, clock.now())),
        _committer = committer ?? ChangeCommitter(database),
        _simulator = GameSimulator(
          config: config,
@@ -42,6 +43,7 @@ class GameEngine extends ChangeNotifier {
   final EconomyConfig config;
   final SaveDatabase _db;
   final Clock _clock;
+  final String Function(String prefix) _newId;
   final ChangeCommitter _committer;
   final GameSimulator _simulator;
   final TurboSchedule _schedule;
@@ -109,17 +111,29 @@ class GameEngine extends ChangeNotifier {
     notifyListeners();
   });
 
-  /// Erases the save and starts a new company with the starting cash.
+  /// Erases the save and starts a new company with the starting cash and the
+  /// free starter vehicle (`settings.starterVehicleTier`), not yet assigned.
+  ///
+  /// The company is written last. Every other record is useless without it,
+  /// so if the app dies half way the save has no company and the player just
+  /// sees the new-game screen again, never a half-made company.
   Future<void> startNewGame(String name) => _serial(() async {
     await _db.clearAll();
     final now = _clock.now();
-    await _db.company.save(
-      Company.newGame(config: config, name: name, now: now),
-    );
     await _db.routeStates.putAll([
       for (final route in config.routes)
         RouteState.initial(route, now, gameDay: 0),
     ]);
+    await _db.vehicles.put(
+      Vehicle(
+        id: _newId('veh'),
+        tier: config.settings.starterVehicleTier,
+        purchasedAt: now,
+      ),
+    );
+    await _db.company.save(
+      Company.newGame(config: config, name: name, now: now),
+    );
     _turbo = TurboClock(schedule: _schedule, clock: _clock)..resume();
     notifyListeners();
   });
@@ -235,8 +249,22 @@ class GameEngine extends ChangeNotifier {
   }
 
   Future<T> _serial<T>(Future<T> Function() operation) {
+    _pending++;
     final result = _tail.then((_) => operation());
-    _tail = result.then<void>((_) {}, onError: (_) {});
+    _tail = result.then<void>(
+      (_) => _pending--,
+      onError: (_) {
+        _pending--;
+      },
+    );
     return result;
   }
+
+  int _pending = 0;
+
+  /// True while an operation (a tick, a purchase, a new game) is queued or
+  /// running. Widget tests pump until this is false, because a save write is a
+  /// chain of file operations that finish in real time.
+  @visibleForTesting
+  bool get isBusy => _pending > 0;
 }

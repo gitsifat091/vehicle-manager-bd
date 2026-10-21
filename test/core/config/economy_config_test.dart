@@ -165,7 +165,9 @@ void main() {
     });
 
     test('rejects a missing delivery count and a negative one', () {
-      final missing = edited((j) => j['vehicles'][0].remove('unlockDeliveries'));
+      final missing = edited(
+        (j) => j['vehicles'][0].remove('unlockDeliveries'),
+      );
       expect(
         () => EconomyConfig.parse(missing),
         configError('vehicles[0].unlockDeliveries is missing'),
@@ -224,7 +226,9 @@ void main() {
 
     test('reads startingGarageSlots and rejects a missing or zero value', () {
       expect(config.settings.startingGarageSlots, 6);
-      final missing = edited((j) => j['settings'].remove('startingGarageSlots'));
+      final missing = edited(
+        (j) => j['settings'].remove('startingGarageSlots'),
+      );
       expect(
         () => EconomyConfig.parse(missing),
         configError('settings.startingGarageSlots is missing'),
@@ -248,6 +252,33 @@ void main() {
         expect(
           () => EconomyConfig.parse(text),
           configError('resaleShareOfPrice must be between 0 and 1'),
+        );
+      }
+    });
+
+    test('reads starterVehicleTier and checks it is an open tier', () {
+      expect(config.settings.starterVehicleTier, 4);
+      expect(config.vehicleByTier(4).availableAtStart, true);
+
+      final missing = edited((j) => j['settings'].remove('starterVehicleTier'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('settings.starterVehicleTier is missing'),
+      );
+      final unknown = edited((j) => j['settings']['starterVehicleTier'] = 99);
+      expect(
+        () => EconomyConfig.parse(unknown),
+        configError('is not a vehicle tier'),
+      );
+      // Tier 3 needs 5 deliveries and tier 5 a permit: not a free starter.
+      for (final locked in [3, 5]) {
+        final text = edited(
+          (j) => j['settings']['starterVehicleTier'] = locked,
+        );
+        expect(
+          () => EconomyConfig.parse(text),
+          configError('cannot be the free starter'),
+          reason: 'tier $locked',
         );
       }
     });

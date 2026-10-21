@@ -26,7 +26,8 @@
     "accidentCostShareOfPrice": 0.1,
     "maxLineHaulKm": 400,
     "startingGarageSlots": 6,
-    "resaleShareOfPrice": 0.6
+    "resaleShareOfPrice": 0.6,
+    "starterVehicleTier": 4
   },
   "permits": [
     {

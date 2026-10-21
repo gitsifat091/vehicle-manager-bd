@@ -104,7 +104,7 @@ abstract class AppLocalizations {
   /// **'Vehicle Manager Bangladesh'**
   String get appTitle;
 
-  /// Temporary text on the placeholder home screen when no company exists.
+  /// Text on the home screen when no company exists. Normally the new-game screen is shown instead.
   ///
   /// In en, this message translates to:
   /// **'No game yet'**
@@ -121,6 +121,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turbo Start speed: {speed} times'**
   String turboLine(String speed);
+
+  /// Heading of the new-game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your company'**
+  String get newGameTitle;
+
+  /// Explains the starting position on the new-game screen. Both values are already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'You start with {cash} and one free {vehicle}. Send it to work and reinvest what it earns.'**
+  String newGameIntro(String cash, String vehicle);
+
+  /// Label of the company name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Company name'**
+  String get companyNameLabel;
+
+  /// Example shown inside the empty company name field.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: Padma Transport'**
+  String get companyNameHint;
+
+  /// Error under the company name field when it is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a company name'**
+  String get companyNameRequired;
+
+  /// Button that creates the company and begins the game.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startGameButton;
+
+  /// Heading of the list of the player's vehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicles'**
+  String get homeVehiclesTitle;
+
+  /// How many of the garage's vehicle slots are taken. Both numbers are already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {total} garage slots used'**
+  String garageSlotsLine(String used, String total);
+
+  /// Status of a vehicle that has no route.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned'**
+  String get vehicleStatusIdle;
+
+  /// Status of a vehicle that is making a trip.
+  ///
+  /// In en, this message translates to:
+  /// **'On the road'**
+  String get vehicleStatusOnTheRoad;
+
+  /// Status of a vehicle whose route has no cargo left today. It goes again when the next game day starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for demand'**
+  String get vehicleStatusWaiting;
+
+  /// Status of an assigned vehicle that can depart now.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to go'**
+  String get vehicleStatusReady;
+
+  /// The route and cargo a vehicle works on. Both are already translated names.
+  ///
+  /// In en, this message translates to:
+  /// **'{route}, {cargo}'**
+  String vehicleRouteLine(String route, String cargo);
+
+  /// Time left on a trip. The time is already formatted as a timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrives in {time}'**
+  String vehicleArrivesIn(String time);
+
+  /// Time until a vehicle waiting for demand departs. The time is already formatted as a timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes again in {time}'**
+  String vehicleDepartsIn(String time);
+
+  /// Temporary button on the placeholder home screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Start working (temporary)'**
+  String get tempStartWorking;
+
+  /// The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.
+  ///
+  /// In en, this message translates to:
+  /// **'{tier, select, tier1{Sonar Van} tier2{Bijli Cargo} tier3{Tuntuni Mini} tier4{Sathi Plus} tier5{Meghna 14} tier6{Jamuna Open} tier7{Karnaphuli 20} tier8{Himaloy Reefer} tier9{Pahari Tipper} tier10{Telrani} tier11{Bongo Mover 40} tier12{Hati Lowbed} other{Vehicle}}'**
+  String vehicleName(String tier);
+
+  /// The name of a route. The route is the route id in lower case, for example r01.
+  ///
+  /// In en, this message translates to:
+  /// **'{route, select, m01{Kawran Bazar to nearby shops} m02{Dhaka neighbourhood delivery} r01{Tejgaon to Dhaka city} r02{Dhaka to Narayanganj} r03{Dhaka to Gazipur} r04{Dhaka to Cumilla} r05{Dhaka to Chattogram Port} r06{Gazipur to Chattogram Port} r07{Dhaka to Sylhet} r08{Dhaka to Bogura} r09{Dhaka to Rangpur} r10{Dhaka to Khulna via Padma Bridge} r11{Dhaka to Khulna via Paturia ferry} r12{Dhaka to Benapole} r13{Chattogram Port to Cumilla} r14{Narayanganj to Dhaka building sites} other{Route}}'**
+  String routeName(String route);
+
+  /// The name of a cargo type. The cargo is the English cargo name in camel case, for example generalDry.
+  ///
+  /// In en, this message translates to:
+  /// **'{cargo, select, marketGoods{Market goods} parcels{Parcels} generalDry{General dry goods} vegetables{Vegetables} garments{Garments} rice{Rice} cementAndRod{Cement and rod} sandAndStone{Sand and stone} fish{Fish} fuel{Fuel} containers{Containers} heavyMachinery{Heavy machinery} other{Cargo}}'**
+  String cargoName(String cargo);
 }
 
 class _AppLocalizationsDelegate

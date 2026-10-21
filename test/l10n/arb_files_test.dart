@@ -20,10 +20,29 @@ void main() {
 
   final enMessages = messages(en);
   final bnMessages = messages(bn);
-  final placeholder = RegExp(r'\{(\w+)[,}]');
 
-  Set<String> placeholdersOf(String message) =>
-      placeholder.allMatches(message).map((m) => m.group(1)!).toSet();
+  /// The placeholders a message declares in the English template's metadata.
+  Set<String> declared(String key) {
+    final meta = en['@$key'] as Map<String, dynamic>;
+    final placeholders = meta['placeholders'] as Map<String, dynamic>?;
+    return placeholders?.keys.toSet() ?? {};
+  }
+
+  /// Placeholder names a message uses: `{name}` or `{name, select, ...}`.
+  Set<String> used(String message, Set<String> names) => {
+    for (final name in names)
+      if (message.contains('{$name}') || message.contains('{$name,')) name,
+  };
+
+  /// The words a reader sees: the message without its placeholders and the
+  /// select syntax (header, option names and braces).
+  String visibleText(String message) {
+    return message
+        .replaceAll(RegExp(r'\{\w+,\s*select,\s*'), '')
+        .replaceAll(RegExp(r'\b[A-Za-z]\w*(?=\{)'), '')
+        .replaceAll(RegExp(r'\{[A-Za-z_]\w*\}'), '')
+        .replaceAll(RegExp(r'[{}]'), '');
+  }
 
   test('both languages have the same keys', () {
     expect(bnMessages.keys.toSet(), enMessages.keys.toSet());
@@ -35,13 +54,27 @@ void main() {
     }
   });
 
-  test('the Bangla strings use the same placeholders', () {
+  test('every declared placeholder is used in both languages', () {
     for (final key in enMessages.keys) {
-      expect(
-        placeholdersOf(bnMessages[key]!),
-        placeholdersOf(enMessages[key]!),
-        reason: key,
-      );
+      final names = declared(key);
+      expect(used(enMessages[key]!, names), names, reason: 'en $key');
+      expect(used(bnMessages[key]!, names), names, reason: 'bn $key');
+    }
+  });
+
+  test('a message with braces declares them', () {
+    for (final e in enMessages.entries) {
+      if (e.value.contains('{')) {
+        expect(declared(e.key), isNotEmpty, reason: e.key);
+      }
+    }
+  });
+
+  test('every select message has an other option in both languages', () {
+    for (final key in enMessages.keys) {
+      if (!enMessages[key]!.contains(', select,')) continue;
+      expect(enMessages[key]!.contains('other{'), true, reason: 'en $key');
+      expect(bnMessages[key]!.contains('other{'), true, reason: 'bn $key');
     }
   });
 
@@ -55,8 +88,11 @@ void main() {
   test('Bangla strings contain no English letters outside placeholders', () {
     final latin = RegExp(r'[A-Za-z]');
     for (final e in bnMessages.entries) {
-      final text = e.value.replaceAll(RegExp(r'\{[^}]*\}'), '');
-      expect(latin.hasMatch(text), false, reason: '${e.key}: ${e.value}');
+      expect(
+        latin.hasMatch(visibleText(e.value)),
+        false,
+        reason: '${e.key}: ${e.value}',
+      );
     }
   });
 

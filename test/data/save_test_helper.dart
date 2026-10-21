@@ -15,7 +15,12 @@ class SaveFolder {
       dir = Directory.systemTemp.createTempSync('vm_save_test_');
     });
     tearDown(() async {
-      await Hive.close();
+      // A test that failed half way can leave a write waiting for a pump that
+      // will never come. Do not let that hang the whole suite.
+      await Hive.close().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => <void>[],
+      );
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     });
   }

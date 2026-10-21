@@ -9,6 +9,8 @@ import 'state/app_settings.dart';
 import 'state/game_engine.dart';
 import 'state/game_loop.dart';
 import 'state/ui_clock.dart';
+import 'ui/screens/home_screen.dart';
+import 'ui/screens/new_game_screen.dart';
 import 'ui/theme/app_theme.dart';
 
 /// The app root. It owns the [GameLoop] (ticks while the widget lives) and
@@ -78,43 +80,21 @@ class _VehicleManagerAppState extends State<VehicleManagerApp> {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: const PlaceholderScreen(),
+          home: const AppHome(),
         ),
       ),
     );
   }
 }
 
-// Temporary home screen until the real screens exist (Milestone 4).
-class PlaceholderScreen extends StatelessWidget {
-  const PlaceholderScreen({super.key});
+/// Chooses the first screen: the new-game screen until a company exists, then
+/// the home screen.
+class AppHome extends StatelessWidget {
+  const AppHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // The snapshot changes when the game does; the UI clock makes the turbo
-    // speed (which moves with time) look at the clock again.
-    final snapshot = context.select((GameEngine e) => e.snapshot);
-    context.watch<UiClock>();
-    final engine = context.read<GameEngine>();
-    final company = snapshot.company;
-    final fmt = context.fmt;
-    final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
-      body: Center(
-        child: company == null
-            ? Text(l10n.noGameYet)
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(company.name),
-                  Text(l10n.cashLine(fmt.money(company.cash))),
-                  Text(
-                    l10n.turboLine(fmt.decimal(engine.turboSpeed, places: 0)),
-                  ),
-                ],
-              ),
-      ),
-    );
+    final hasGame = context.select((GameEngine e) => e.snapshot.hasGame);
+    return hasGame ? const HomeScreen() : const NewGameScreen();
   }
 }

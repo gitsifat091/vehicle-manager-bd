@@ -7,5 +7,43 @@
 
   "cashLine": "নগদ: {amount}",
 
-  "turboLine": "টার্বো স্টার্টের গতি: {speed} গুণ"
+  "turboLine": "টার্বো স্টার্টের গতি: {speed} গুণ",
+
+  "newGameTitle": "আপনার কোম্পানি শুরু করুন",
+
+  "newGameIntro": "আপনি {cash} আর একটি বিনামূল্যের {vehicle} নিয়ে শুরু করছেন। এটিকে কাজে পাঠান আর আয় থেকে আবার বিনিয়োগ করুন।",
+
+  "companyNameLabel": "কোম্পানির নাম",
+
+  "companyNameHint": "যেমন: পদ্মা ট্রান্সপোর্ট",
+
+  "companyNameRequired": "কোম্পানির নাম লিখুন",
+
+  "startGameButton": "শুরু করুন",
+
+  "homeVehiclesTitle": "যানবাহন",
+
+  "garageSlotsLine": "গ্যারেজের {total}টি জায়গার মধ্যে {used}টি ভরা",
+
+  "vehicleStatusIdle": "কাজ দেওয়া হয়নি",
+
+  "vehicleStatusOnTheRoad": "পথে আছে",
+
+  "vehicleStatusWaiting": "চাহিদার অপেক্ষায়",
+
+  "vehicleStatusReady": "যাত্রার জন্য প্রস্তুত",
+
+  "vehicleRouteLine": "{route}, {cargo}",
+
+  "vehicleArrivesIn": "পৌঁছাতে বাকি {time}",
+
+  "vehicleDepartsIn": "আবার ছাড়বে {time} পরে",
+
+  "tempStartWorking": "কাজে পাঠান (সাময়িক)",
+
+  "vehicleName": "{tier, select, tier1{সোনার ভ্যান} tier2{বিজলি কার্গো} tier3{টুনটুনি মিনি} tier4{সাথী প্লাস} tier5{মেঘনা ১৪} tier6{যমুনা খোলা ট্রাক} tier7{কর্ণফুলী ২০} tier8{হিমালয় রিফার} tier9{পাহাড়ি টিপার} tier10{তেলরানী} tier11{বঙ্গমুভার ৪০} tier12{হাতি লো-বেড} other{যানবাহন}}",
+
+  "routeName": "{route, select, m01{কাওরান বাজার থেকে কাছের দোকান} m02{ঢাকার পাড়ায় ডেলিভারি} r01{তেজগাঁও থেকে ঢাকা শহর} r02{ঢাকা থেকে নারায়ণগঞ্জ} r03{ঢাকা থেকে গাজীপুর} r04{ঢাকা থেকে কুমিল্লা} r05{ঢাকা থেকে চট্টগ্রাম বন্দর} r06{গাজীপুর থেকে চট্টগ্রাম বন্দর} r07{ঢাকা থেকে সিলেট} r08{ঢাকা থেকে বগুড়া} r09{ঢাকা থেকে রংপুর} r10{ঢাকা থেকে খুলনা, পদ্মা সেতু হয়ে} r11{ঢাকা থেকে খুলনা, পাটুরিয়া ফেরি হয়ে} r12{ঢাকা থেকে বেনাপোল} r13{চট্টগ্রাম বন্দর থেকে কুমিল্লা} r14{নারায়ণগঞ্জ থেকে ঢাকার নির্মাণস্থল} other{রুট}}",
+
+  "cargoName": "{cargo, select, marketGoods{বাজারের মাল} parcels{পার্সেল} generalDry{সাধারণ শুকনো মাল} vegetables{সবজি} garments{পোশাক} rice{চাল} cementAndRod{সিমেন্ট ও রড} sandAndStone{বালু ও পাথর} fish{মাছ} fuel{জ্বালানি} containers{কনটেইনার} heavyMachinery{ভারী যন্ত্র} other{মাল}}"
 }

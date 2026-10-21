@@ -8,7 +8,7 @@
 
   "noGameYet": "No game yet",
   "@noGameYet": {
-    "description": "Temporary text on the placeholder home screen when no company exists."
+    "description": "Text on the home screen when no company exists. Normally the new-game screen is shown instead."
   },
 
   "cashLine": "Cash: {amount}",
@@ -24,6 +24,128 @@
     "description": "How many times faster than normal the game runs during Turbo Start. The speed is already formatted.",
     "placeholders": {
       "speed": {"type": "String"}
+    }
+  },
+
+  "newGameTitle": "Start your company",
+  "@newGameTitle": {
+    "description": "Heading of the new-game screen."
+  },
+
+  "newGameIntro": "You start with {cash} and one free {vehicle}. Send it to work and reinvest what it earns.",
+  "@newGameIntro": {
+    "description": "Explains the starting position on the new-game screen. Both values are already formatted.",
+    "placeholders": {
+      "cash": {"type": "String"},
+      "vehicle": {"type": "String"}
+    }
+  },
+
+  "companyNameLabel": "Company name",
+  "@companyNameLabel": {
+    "description": "Label of the company name field."
+  },
+
+  "companyNameHint": "For example: Padma Transport",
+  "@companyNameHint": {
+    "description": "Example shown inside the empty company name field."
+  },
+
+  "companyNameRequired": "Enter a company name",
+  "@companyNameRequired": {
+    "description": "Error under the company name field when it is empty."
+  },
+
+  "startGameButton": "Start",
+  "@startGameButton": {
+    "description": "Button that creates the company and begins the game."
+  },
+
+  "homeVehiclesTitle": "Vehicles",
+  "@homeVehiclesTitle": {
+    "description": "Heading of the list of the player's vehicles."
+  },
+
+  "garageSlotsLine": "{used} of {total} garage slots used",
+  "@garageSlotsLine": {
+    "description": "How many of the garage's vehicle slots are taken. Both numbers are already formatted.",
+    "placeholders": {
+      "used": {"type": "String"},
+      "total": {"type": "String"}
+    }
+  },
+
+  "vehicleStatusIdle": "Not assigned",
+  "@vehicleStatusIdle": {
+    "description": "Status of a vehicle that has no route."
+  },
+
+  "vehicleStatusOnTheRoad": "On the road",
+  "@vehicleStatusOnTheRoad": {
+    "description": "Status of a vehicle that is making a trip."
+  },
+
+  "vehicleStatusWaiting": "Waiting for demand",
+  "@vehicleStatusWaiting": {
+    "description": "Status of a vehicle whose route has no cargo left today. It goes again when the next game day starts."
+  },
+
+  "vehicleStatusReady": "Ready to go",
+  "@vehicleStatusReady": {
+    "description": "Status of an assigned vehicle that can depart now."
+  },
+
+  "vehicleRouteLine": "{route}, {cargo}",
+  "@vehicleRouteLine": {
+    "description": "The route and cargo a vehicle works on. Both are already translated names.",
+    "placeholders": {
+      "route": {"type": "String"},
+      "cargo": {"type": "String"}
+    }
+  },
+
+  "vehicleArrivesIn": "Arrives in {time}",
+  "@vehicleArrivesIn": {
+    "description": "Time left on a trip. The time is already formatted as a timer.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "vehicleDepartsIn": "Goes again in {time}",
+  "@vehicleDepartsIn": {
+    "description": "Time until a vehicle waiting for demand departs. The time is already formatted as a timer.",
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+
+  "tempStartWorking": "Start working (temporary)",
+  "@tempStartWorking": {
+    "description": "Temporary button on the placeholder home screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists."
+  },
+
+  "vehicleName": "{tier, select, tier1{Sonar Van} tier2{Bijli Cargo} tier3{Tuntuni Mini} tier4{Sathi Plus} tier5{Meghna 14} tier6{Jamuna Open} tier7{Karnaphuli 20} tier8{Himaloy Reefer} tier9{Pahari Tipper} tier10{Telrani} tier11{Bongo Mover 40} tier12{Hati Lowbed} other{Vehicle}}",
+  "@vehicleName": {
+    "description": "The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.",
+    "placeholders": {
+      "tier": {"type": "String"}
+    }
+  },
+
+  "routeName": "{route, select, m01{Kawran Bazar to nearby shops} m02{Dhaka neighbourhood delivery} r01{Tejgaon to Dhaka city} r02{Dhaka to Narayanganj} r03{Dhaka to Gazipur} r04{Dhaka to Cumilla} r05{Dhaka to Chattogram Port} r06{Gazipur to Chattogram Port} r07{Dhaka to Sylhet} r08{Dhaka to Bogura} r09{Dhaka to Rangpur} r10{Dhaka to Khulna via Padma Bridge} r11{Dhaka to Khulna via Paturia ferry} r12{Dhaka to Benapole} r13{Chattogram Port to Cumilla} r14{Narayanganj to Dhaka building sites} other{Route}}",
+  "@routeName": {
+    "description": "The name of a route. The route is the route id in lower case, for example r01.",
+    "placeholders": {
+      "route": {"type": "String"}
+    }
+  },
+
+  "cargoName": "{cargo, select, marketGoods{Market goods} parcels{Parcels} generalDry{General dry goods} vegetables{Vegetables} garments{Garments} rice{Rice} cementAndRod{Cement and rod} sandAndStone{Sand and stone} fish{Fish} fuel{Fuel} containers{Containers} heavyMachinery{Heavy machinery} other{Cargo}}",
+  "@cargoName": {
+    "description": "The name of a cargo type. The cargo is the English cargo name in camel case, for example generalDry.",
+    "placeholders": {
+      "cargo": {"type": "String"}
     }
   }
 }

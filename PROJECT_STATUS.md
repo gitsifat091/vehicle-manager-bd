@@ -6,10 +6,10 @@ Last updated: 2026-10-21
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done and pushed, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 304 tests pass, `flutter analyze` is clean. Economy config is version 0.4
-- The engine and game loop are not wired into the app yet. `main.dart` shows a placeholder screen
+- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 409 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestone 4 is in progress: steps 1, 2, 4 and 3 are done (see the step list below). The app runs: new-game screen, then a temporary home screen with cash, turbo speed and a read-only vehicle list with a temporary "Start working" button
 - Balance work is paused until Milestone 5 (see open question 4)
-- Next: Milestone 4 (screens). Its plan is waiting for approval
+- Next: step 5, the responsive shell
 
 ## Milestones
 
@@ -18,11 +18,35 @@ Last updated: 2026-10-21
 | 1 | Config loader, economy engine, golden tests | Done |
 | 2 | Data models, Hive adapters, repositories | Done |
 | 3 | Clock, turbo, dispatch, settlement, offline catch-up, crash safety | Done |
-| 4 | Screens: map, garage, buy with demand preview, assign route, finance. Also: selling with a swap hint from `swapPaybackHours`, permit purchase through `ChangeSet` (`permitsAfter`), the garage slot count on the buy screen | Next |
+| 4 | Screens: map, garage, buy with demand preview, assign route, finance. Also: selling with a swap hint from `swapPaybackHours`, permit purchase through `ChangeSet` (`permitsAfter`), the garage slot count on the buy screen | In progress |
 | 5 | Terminals, demand regeneration, overload slider, fitness timer | |
 | 6 | Events and checklist | |
-| 7 | Localization, notifications, polish, Android release | |
+| 7 | Localization review (Bangla translations), notifications, polish, Android release | |
 | 8 | Windows build and installer | |
+
+### Milestone 4 steps
+
+Each step ends with `flutter analyze` and `flutter test` passing, and one commit.
+
+| Step | What | Status |
+|---|---|---|
+| 1 | Wire engine and game loop into the app with Provider (`bootstrap`, `VehicleManagerApp`). Desktop rule: `resumed` and `inactive` count turbo time, only `hidden`, `paused` and `detached` freeze it | Done |
+| 2 | Read model `GameEngine.snapshot`, `vehicleActivity`, `UiClock` (one second) | Done |
+| 4 | ARB (en, bn), `Formats` (lakh and crore, Bangla digits), `AppSettings` (language, theme) in a device settings box | Done |
+| 3 | `settings.starterVehicleTier`, free starter vehicle, new-game screen, read-only vehicle list on the temporary home | Done |
+| 5 | Responsive shell: bottom bar under 600 px, rail and detail panel from 600 px | Next |
+| 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | |
+| 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | |
+| 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | |
+| 9 | Garage screen and vehicle detail | |
+| 10 | Assign route and cargo (removes the temporary button) | |
+| 11a | Buy screen, static: tiers, locks, slot count, demand preview | |
+| 11b | Buy screen, interaction: buy vehicle, buy permit | |
+| 12a | Map screen, static: `assets/config/map_layout.json`, cities, routes, vehicles | |
+| 12b | Map screen, interaction: pan, zoom, wheel, tap a route | |
+| 13 | Finance screen from the rollups | |
+| 14 | Settings screen: language, theme, new game with confirmation | |
+| 15 | Closing pass: wide layout, dark theme, touch targets, manual runs on Windows and Android | |
 
 ## Decisions made (do not reopen without a reason)
 
@@ -47,6 +71,14 @@ Tech
 - A wait for the next day is exact when the boundary is already past; a boundary still ahead is shortened by the current turbo speed, and an early wake-up just waits again
 - `lib/core/sim` imports the pure Dart data models (no Flutter, no Hive). Accepted
 - Added fields: `Vehicle.availableAt`, `Trip.vehicleTier`, `Company.turboElapsed`, `RouteState.gameDay`. Config only: `vehicles[].allowedRoutes`, `vehicles[].unlockPermit`, `vehicles[].unlockDeliveries` (replaced the free-text `unlock`), `permits`, `settings.startingGarageSlots`, `settings.resaleShareOfPrice`
+
+Milestone 4
+- All user text is in ARB from the start (`lib/l10n`, built-in gen-l10n, no new package). Vehicle, route and cargo names are ARB select messages keyed by tier, route id and camel-cased cargo name; `test/l10n/config_names_test.dart` fails if the config gains one without a translation. Milestone 7 is the Bangla review, not the first translation
+- Device settings (language, theme) live in their own Hive box that a new game does not erase. Language null follows the device, English is the fallback
+- `settings.starterVehicleTier` = 4 (sheet: Settings row 29). The starter is granted by `startNewGame`, unassigned. The company is written last, so a half-made game looks like no game
+- No new packages: plain Navigator, no go_router. The map layout goes in `assets/config/map_layout.json`, not in `economy.json` (it is not economy data)
+- The overload slider stays out of M4 (assign uses 0 overload). Trip history: keep the last 500 settled trips, plus lifetime totals on `Company` and a per-game-day rollup (revenue, costs, trips) for the finance screen, both updated inside the settlement `ChangeSet`; pruning only deletes trips that are already counted
+- Widget tests that use the save go through `test/support/app_harness.dart`: the save is real file IO, so setup runs in `runAsync`, every later engine operation stays in the test zone, and `settle` pumps until `engine.isBusy` is false. Mixing the two zones deadlocks inside Hive
 
 Product
 - Android first, Windows second, no web in the MVP
@@ -89,7 +121,7 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - The sheet's First Hour tab ignores demand and the garage cap. `tool/first_hours_sim.dart` is the pacing check until the sheet is updated
 - Route distances are approximate. Replace with real road distances (OSRM) during data prep
 - Meghna+Gumti and Paturia ferry tolls are partly estimated. Re-verify all tolls, diesel price and truck prices before release
-- Placeholder screen has inline English strings (moves to ARB in Milestone 7)
+- The home screen and its "Start working" button (R01, General dry hardcoded) are temporary: the shell replaces the screen in step 5 and the assign screen replaces the button in step 10
 - `Company.permits` (adapter field 5, optional, default empty) exists, but a permit purchase is not yet part of `ChangeSet`. Add `permitsAfter` to `ChangeSet` with the buy screen (Milestone 4), so buying a permit is crash safe like every other save. Committing a change already keeps the owned permits
 - Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
 - The pacing tool's bots buy no permits, so tiers 5 and up are never tested for pacing. Add permit buying to the bots when tier 5 and up matter (Milestone 5 or later)
@@ -98,7 +130,9 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
-- `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to E, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
+- `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
 - `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet
-- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM. Edit JSON and source files with the editor tools, or strip the BOM afterwards
+- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
+- Do not run `dart format` on the whole project: it reformats files that were not touched. Format the files you changed
+- Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
 - Use high effort (`/effort`) for milestone work

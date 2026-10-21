@@ -73,8 +73,54 @@ void main() {
       await engine.startNewGame('Old');
       await db.vehicles.put(idleVehicle('v1', 4));
       await engine.startNewGame('New');
-      expect(db.vehicles.count, 0);
+      expect(db.vehicles.get('v1'), isNull, reason: 'the old vehicle is gone');
+      expect(db.vehicles.count, 1, reason: 'only the new free starter');
       expect(db.company.load()!.name, 'New');
+    });
+
+    test('grants the free starter vehicle, not yet assigned', () async {
+      await engine.startNewGame('Sifat Ltd');
+      final vehicles = db.vehicles.all();
+      expect(vehicles, hasLength(1));
+      final starter = vehicles.single;
+      expect(starter.tier, 4);
+      expect(starter.id, startsWith('veh_'));
+      expect(starter.purchasedAt, t0);
+      expect(starter.isAssigned, false);
+      expect(starter.availableAt, isNull);
+      expect(engine.snapshot.freeGarageSlots, 5);
+    });
+
+    test('the starter tier comes from the settings', () async {
+      final custom = GameEngine(
+        config: editedConfig((j) => j['settings']['starterVehicleTier'] = 2),
+        database: db,
+        clock: clock,
+        newId: ids,
+      );
+      addTearDown(custom.dispose);
+      await custom.startNewGame('A');
+      expect(db.vehicles.all().single.tier, 2);
+    });
+
+    test('starting again gives one starter, not two', () async {
+      await engine.startNewGame('First');
+      await engine.startNewGame('Second');
+      expect(db.vehicles.count, 1);
+    });
+
+    test('the company is written last', () async {
+      // Every other record is useless without the company, so a game that
+      // dies half way must look like no game at all. The starter and the
+      // route states are already there by the time the company is saved.
+      final order = <String>[];
+      db.vehicles.box.watch().listen((_) => order.add('vehicle'));
+      db.routeStates.box.watch().listen((_) => order.add('routes'));
+      db.company.box.watch().listen((_) => order.add('company'));
+      await engine.startNewGame('A');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(order.last, 'company');
+      expect(order.where((e) => e == 'company'), hasLength(1));
     });
 
     test('start and tick do nothing without a company', () async {

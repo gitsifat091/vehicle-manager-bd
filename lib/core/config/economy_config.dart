@@ -182,6 +182,21 @@ class EconomyConfig {
         throw ConfigException('permits: "${l.id}" priceTk must be above 0');
       }
     }
+    final starters = vehicles.where(
+      (v) => v.tier == settings.starterVehicleTier,
+    );
+    if (starters.isEmpty) {
+      throw ConfigException(
+        'settings.starterVehicleTier ${settings.starterVehicleTier} '
+        'is not a vehicle tier',
+      );
+    }
+    if (!starters.first.availableAtStart) {
+      throw ConfigException(
+        'settings.starterVehicleTier ${settings.starterVehicleTier} '
+        'needs a permit or deliveries, so it cannot be the free starter',
+      );
+    }
     final usedPermits = <String>{};
     for (final v in vehicles) {
       final permitId = v.unlockPermitId;
@@ -257,6 +272,7 @@ EconomySettings _parseSettings(_Reader r) => EconomySettings(
   maxLineHaulKm: r.number('maxLineHaulKm'),
   startingGarageSlots: r.integer('startingGarageSlots'),
   resaleShareOfPrice: r.number('resaleShareOfPrice'),
+  starterVehicleTier: r.integer('starterVehicleTier'),
 );
 
 VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
@@ -374,7 +390,9 @@ class _Reader {
     final value = _map[key];
     if (value == null) return null;
     if (value is! String) {
-      throw ConfigException('$path.$key must be a string or null, got "$value"');
+      throw ConfigException(
+        '$path.$key must be a string or null, got "$value"',
+      );
     }
     return value;
   }

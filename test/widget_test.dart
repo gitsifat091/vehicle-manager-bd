@@ -6,6 +6,8 @@ import 'package:vehicle_manager_bd/core/config/economy_config.dart';
 import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
 import 'package:vehicle_manager_bd/state/app_settings.dart';
 import 'package:vehicle_manager_bd/state/game_engine.dart';
+import 'package:vehicle_manager_bd/ui/screens/home_screen.dart';
+import 'package:vehicle_manager_bd/ui/screens/new_game_screen.dart';
 
 import 'core/test_config.dart';
 import 'data/save_test_helper.dart';
@@ -72,7 +74,7 @@ void main() {
     final engine = await engineWithGame(tester, 'Sifat Ltd');
     await tester.pumpWidget(app(engine));
 
-    expect(find.byType(PlaceholderScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Sifat Ltd'), findsOneWidget);
     expect(find.text('Cash: Tk 15,00,000'), findsOneWidget);
     expect(find.text('Turbo Start speed: 20 times'), findsOneWidget);
@@ -94,7 +96,7 @@ void main() {
     expect(find.text('Turbo Start speed: 10 times'), findsOneWidget);
   });
 
-  testWidgets('without a game it says so', (tester) async {
+  testWidgets('without a game the new-game screen is shown', (tester) async {
     await tester.runAsync(() async {
       db = await folder.open();
       settings = AppSettings(db.settings);
@@ -106,7 +108,9 @@ void main() {
     );
     addTearDown(engine.dispose);
     await tester.pumpWidget(app(engine));
-    expect(find.text('No game yet'), findsOneWidget);
+    expect(find.byType(NewGameScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(find.text('Start your company'), findsOneWidget);
   });
 
   testWidgets('rebuilds when the engine notifies', (tester) async {
@@ -126,7 +130,7 @@ void main() {
     final engine = await engineWithGame(tester, 'A');
     await tester.pumpWidget(app(engine));
 
-    final context = tester.element(find.byType(PlaceholderScreen));
+    final context = tester.element(find.byType(HomeScreen));
     expect(Provider.of<GameEngine>(context, listen: false), same(engine));
     expect(Provider.of<EconomyConfig>(context, listen: false), same(config));
     expect(Provider.of<AppSettings>(context, listen: false), same(settings));
@@ -212,6 +216,8 @@ void main() {
       await tester.pump();
       expect(engine.pauses, 1);
 
+      // Coming back from hidden passes through inactive, as the OS sends it.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(engine.resumes, 1);
