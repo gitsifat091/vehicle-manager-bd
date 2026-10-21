@@ -47,11 +47,13 @@ void main() {
         routeId: 'R05',
         cargoName: 'Rice',
         overloadT: 4,
+        availableAt: t0,
       );
       expect(a.isAssigned, true);
       expect(a.assignedRouteId, 'R05');
       expect(a.assignedCargo, 'Rice');
       expect(a.overloadT, 4);
+      expect(a.availableAt, t0);
       expect(a.id, 'v1');
       expect(a.withoutAssignment(), v);
     });

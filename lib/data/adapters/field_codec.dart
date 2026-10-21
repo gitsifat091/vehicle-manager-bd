@@ -9,6 +9,7 @@ abstract final class HiveTypeIds {
   static const routeState = 3;
   static const trip = 4;
   static const tripCosts = 5;
+  static const changeSet = 6;
 }
 
 /// Every adapter writes the field count, then (index, value) pairs. This is

@@ -2,14 +2,15 @@ import '../../core/config/economy_config.dart';
 
 /// The player's company. One per save.
 ///
-/// [createdAt] doubles as the Turbo Start clock: the first 60 real minutes
-/// after it run at the boosted speeds from the config.
+/// [createdAt] anchors the game days (demand resets at each day boundary).
+/// [turboElapsed] is the foreground play time used up by Turbo Start.
 class Company {
   Company({
     required this.name,
     required this.cash,
     required DateTime createdAt,
     this.completedTrips = 0,
+    this.turboElapsed = Duration.zero,
   }) : createdAt = createdAt.toUtc();
 
   /// A fresh company with the config's starting cash.
@@ -34,12 +35,22 @@ class Company {
   /// Trips settled so far. Drives unlocks such as "5 deliveries".
   final int completedTrips;
 
-  Company copyWith({String? name, int? cash, int? completedTrips}) {
+  /// Foreground play time so far. It only grows while the app is in the
+  /// foreground, so time away does not use up the Turbo Start.
+  final Duration turboElapsed;
+
+  Company copyWith({
+    String? name,
+    int? cash,
+    int? completedTrips,
+    Duration? turboElapsed,
+  }) {
     return Company(
       name: name ?? this.name,
       cash: cash ?? this.cash,
       createdAt: createdAt,
       completedTrips: completedTrips ?? this.completedTrips,
+      turboElapsed: turboElapsed ?? this.turboElapsed,
     );
   }
 
@@ -49,10 +60,12 @@ class Company {
       other.name == name &&
       other.cash == cash &&
       other.createdAt == createdAt &&
-      other.completedTrips == completedTrips;
+      other.completedTrips == completedTrips &&
+      other.turboElapsed == turboElapsed;
 
   @override
-  int get hashCode => Object.hash(name, cash, createdAt, completedTrips);
+  int get hashCode =>
+      Object.hash(name, cash, createdAt, completedTrips, turboElapsed);
 
   @override
   String toString() =>

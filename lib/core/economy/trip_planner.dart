@@ -60,6 +60,9 @@ TripRejection? checkTripEligibility({
 /// vehicle's max load, so a tanker (legal payload equals max load) cannot
 /// overload. Fines and accidents are expected values; the sim rolls them.
 ///
+/// [loadLimitT] caps the load further, for example at the demand left on the
+/// route. The trip then carries what is left, even below the legal payload.
+///
 /// Throws [TripRejectedException] when the trip is not allowed. Call
 /// [checkTripEligibility] first to get the reason without an exception.
 TripQuote quoteTrip({
@@ -68,6 +71,7 @@ TripQuote quoteTrip({
   required RouteSpec route,
   required CargoSpec cargo,
   double overloadT = 0,
+  double? loadLimitT,
 }) {
   final rejection = checkTripEligibility(
     settings: config.settings,
@@ -79,7 +83,7 @@ TripQuote quoteTrip({
   if (rejection != null) throw TripRejectedException(rejection);
 
   final s = config.settings;
-  final loadT = f.loadCarried(vehicle, overloadT);
+  final loadT = f.loadCarried(vehicle, overloadT, limitT: loadLimitT);
   final ratio = f.overloadRatio(vehicle, loadT);
   final over = f.tonsOver(vehicle, loadT);
   final km = f.drivenKm(route);

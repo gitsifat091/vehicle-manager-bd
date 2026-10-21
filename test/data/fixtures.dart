@@ -6,6 +6,7 @@ Trip sampleTrip({String id = 't1', DateTime? arriveAt, bool settled = false}) {
   return Trip(
     id: id,
     vehicleId: 'v1',
+    vehicleTier: 6,
     routeId: 'R05',
     cargo: 'General dry',
     loadT: 10,

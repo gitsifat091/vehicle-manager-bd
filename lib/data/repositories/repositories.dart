@@ -21,6 +21,24 @@ class CompanyRepository {
   Future<void> clear() => box.clear();
 }
 
+/// The change set that is being written to disk right now, if any.
+///
+/// It is written in a single put before anything else, so a crash leaves
+/// either nothing or a complete record that startup can finish.
+class PendingChangeRepository {
+  PendingChangeRepository(this.box);
+
+  static const _key = 'pending';
+
+  final Box<ChangeSet> box;
+
+  ChangeSet? load() => box.get(_key);
+
+  Future<void> save(ChangeSet change) => box.put(_key, change);
+
+  Future<void> clear() => box.delete(_key);
+}
+
 class VehicleRepository extends BoxRepository<Vehicle> {
   VehicleRepository(super.box);
 

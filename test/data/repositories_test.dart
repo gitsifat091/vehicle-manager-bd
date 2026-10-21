@@ -45,7 +45,11 @@ void main() {
       expect(db.vehicles.get('v1'), v);
       expect(db.vehicles.count, 1);
 
-      final assigned = v.withAssignment(routeId: 'R01', cargoName: 'Rice');
+      final assigned = v.withAssignment(
+        routeId: 'R01',
+        cargoName: 'Rice',
+        availableAt: t0,
+      );
       await db.vehicles.put(assigned);
       expect(db.vehicles.count, 1);
       expect(db.vehicles.get('v1')!.assignedRouteId, 'R01');
@@ -117,6 +121,7 @@ void main() {
       Trip trip(String id, int departMin) => Trip(
         id: id,
         vehicleId: 'v',
+        vehicleTier: 4,
         routeId: 'R01',
         cargo: 'Rice',
         loadT: 1,

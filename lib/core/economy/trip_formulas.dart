@@ -8,8 +8,12 @@ import 'dart:math' as math;
 import '../config/economy_config.dart';
 
 /// Load carried = legal payload + overload, capped at the vehicle's max load.
-double loadCarried(VehicleSpec vehicle, double overloadT) {
-  return math.min(vehicle.legalPayloadT + overloadT, vehicle.maxLoadT);
+///
+/// [limitT] is a further cap, such as the demand left on the route. It can
+/// bring the load below the legal payload.
+double loadCarried(VehicleSpec vehicle, double overloadT, {double? limitT}) {
+  final load = math.min(vehicle.legalPayloadT + overloadT, vehicle.maxLoadT);
+  return limitT == null ? load : math.min(load, limitT);
 }
 
 /// Overload ratio = (load - legal payload) / legal payload. Never negative.

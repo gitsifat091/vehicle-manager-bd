@@ -56,6 +56,7 @@ class Trip {
   Trip({
     required this.id,
     required this.vehicleId,
+    required this.vehicleTier,
     required this.routeId,
     required this.cargo,
     required this.loadT,
@@ -69,6 +70,9 @@ class Trip {
 
   final String id;
   final String vehicleId;
+
+  /// Tier of the vehicle, kept so the trip can be settled on its own.
+  final int vehicleTier;
   final String routeId;
 
   /// Cargo name, as in the config.
@@ -95,6 +99,7 @@ class Trip {
     return Trip(
       id: id,
       vehicleId: vehicleId,
+      vehicleTier: vehicleTier,
       routeId: routeId,
       cargo: cargo,
       loadT: loadT,
@@ -111,6 +116,7 @@ class Trip {
       other is Trip &&
       other.id == id &&
       other.vehicleId == vehicleId &&
+      other.vehicleTier == vehicleTier &&
       other.routeId == routeId &&
       other.cargo == cargo &&
       other.loadT == loadT &&
@@ -124,6 +130,7 @@ class Trip {
   int get hashCode => Object.hash(
     id,
     vehicleId,
+    vehicleTier,
     routeId,
     cargo,
     loadT,

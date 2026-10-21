@@ -4,7 +4,7 @@ import '../adapters/game_adapters.dart';
 import '../models/models.dart';
 import 'repositories.dart';
 
-/// The local save: five Hive boxes and a repository for each.
+/// The local save: six Hive boxes and a repository for each.
 ///
 /// Hive must already point at a folder. Tests call [openAt] with a temp
 /// folder; the app uses the platform helper in lib/platform/, which picks the
@@ -18,6 +18,7 @@ class SaveDatabase {
     required this.terminals,
     required this.routeStates,
     required this.trips,
+    required this.pending,
   });
 
   static const companyBox = 'company';
@@ -25,12 +26,14 @@ class SaveDatabase {
   static const terminalsBox = 'terminals';
   static const routeStatesBox = 'route_states';
   static const tripsBox = 'trips';
+  static const pendingBox = 'pending_change';
 
   final CompanyRepository company;
   final VehicleRepository vehicles;
   final TerminalRepository terminals;
   final RouteStateRepository routeStates;
   final TripRepository trips;
+  final PendingChangeRepository pending;
 
   /// Points Hive at [path] and opens the save there.
   static Future<SaveDatabase> openAt(String path) async {
@@ -49,6 +52,9 @@ class SaveDatabase {
         await Hive.openBox<RouteState>(routeStatesBox),
       ),
       trips: TripRepository(await Hive.openBox<Trip>(tripsBox)),
+      pending: PendingChangeRepository(
+        await Hive.openBox<ChangeSet>(pendingBox),
+      ),
     );
   }
 
@@ -59,6 +65,7 @@ class SaveDatabase {
     await terminals.clear();
     await routeStates.clear();
     await trips.clear();
+    await pending.box.clear();
   }
 
   /// Flushes and closes all boxes.
@@ -68,5 +75,6 @@ class SaveDatabase {
     await terminals.box.close();
     await routeStates.box.close();
     await trips.box.close();
+    await pending.box.close();
   }
 }

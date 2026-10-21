@@ -127,8 +127,12 @@ If a code change breaks these, either the code is wrong or the spreadsheet must 
 - Store every trip as `{vehicleId, routeId, cargo, loadT, departAt, arriveAt, revenue, costs}` with real UTC timestamps
 - Real duration = game hours x 60 / gameMinutesPerRealMinute / turbo speed at dispatch time
 - Never run a per-frame simulation loop. Positions and progress are computed from timestamps, so offline progress is free
-- On app open: settle every trip whose arriveAt has passed, in time order, then auto-redispatch Local hauls
-- Turbo Start: 20x for the first 20 real minutes, 10x until 40, 5x until 60, then 1x (values from config)
+- On app open: settle every trip whose arriveAt has passed, in time order, then auto-redispatch Local hauls back to back (each new trip departs at the previous arriveAt). A per-vehicle step cap stops runaway catch-up; the rest finishes on the next ticks
+- While the app is open a slow timer (about 3 seconds) settles due trips and redispatches Local hauls
+- Turbo Start: 20x for the first 20 minutes of foreground play, 10x until 40, 5x until 60, then 1x (values from config). Only foreground time counts: it is stored in `Company.turboElapsed` and frozen when the app is paused
+- A game day is 24 game hours (24 real minutes at 60 game minutes per real minute), counted from the company's creation. Turbo does not stretch it. Route demand resets to `dailyDemandT` at each day boundary. A vehicle that finds no demand waits for the next day; if less than a full load is left it carries what is left
+- Fines and accidents are rolled at settlement, one roll per weighbridge then one for the accident, with an injected seeded `Random`. `lib/core` never calls `DateTime.now()`: it takes a `Clock`
+- Crash safety: every save goes through `ChangeCommitter`. A `ChangeSet` of absolute values (new cash total, whole trips) is written first as the pending record, then applied, then cleared. On start the pending record is finished, so a trip is never paid twice or lost
 
 ## MVP scope
 
