@@ -49,9 +49,12 @@ Product
 
 ## Open questions
 
-1. Post-turbo income gap: after the first hour the next purchase is about 2 hours away. Plan a checklist reward around the 1 to 2 hour mark (Milestone 6)
+All figures below come from `dart run tool/first_hours_sim.dart` (3 hours, default config, 20 seeds, foreground play, greedy buyer: cheapest useful vehicle from tier 3 up on Local hauls from Dhaka, unlocks ignored). Rerun it after any balance change. The sheet's First Hour tab scales income by turbo speed and ignores demand (a day is 24 real minutes at 1x), which is what the game now does too, because days and trips speed up together.
+
+1. **Post-turbo income gap.** Hour 1 income is Tk 26 to 31 lakh (sheet: about 25 lakh) and buys 4 vehicles (sheet: 3 purchases, one of them a terminal). Hour 2 income drops to Tk 2.6 to 3.9 lakh. The next purchase after the turbo ends comes after a median of 84 minutes (range 59 to 118; in 3 of 20 seeds none within the 3 hours). Plan a checklist reward around the 1 to 2 hour mark (Milestone 6)
 2. Overloading on routes with no weighbridge is very profitable (2.3x). Plan a random mobile-check event (Milestone 6)
-3. With the faster turbo days, one pickup on R01 never runs out of demand in the first hour (about 500 trips, 29 game days), but a fleet of four does. Check the real first-hour pacing when the buy screen exists (Milestone 4), and tune the economy model if needed, not the Dart code
+3. **R01 demand.** One Sathi Plus on R01 moves 25.7 t per game day at any speed, so R01 (60 t a day) holds two of them plus a small van, and a third pickup waits for the next day. The baseline buyer never reaches that in 3 hours (5 to 6 vehicles spread over R01 and R02), so R01 demand does not run out. No pacing change is needed for R01. Note the sheet only checks this statically ("vehicles before demand runs out")
+4. **Pedal vans are a runaway.** Sonar Van (Tk 20,000, tier 1) is allowed on local routes R01 to R03, not only M01 and M02. With no unlocks or fleet cap, a buyer that includes tier 1 buys about 166 vans in the first 12 minutes and gets Tk 60 lakh in hour 1. Decide in Milestone 4 or 5: restrict tiers 1 and 2 to the M routes, add a garage slot cap, or enforce the unlock rules. No balance number changed
 
 ## Known gaps (fix before release, not now)
 
@@ -64,4 +67,5 @@ Product
 
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
+- `dart run tool/first_hours_sim.dart [hours] [seeds]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions
 - Use high effort (`/effort`) for milestone work
