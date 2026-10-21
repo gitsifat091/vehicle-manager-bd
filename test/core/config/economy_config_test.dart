@@ -32,6 +32,7 @@ void main() {
       expect(config.tolls, hasLength(7));
       expect(config.settings.dieselPricePerLitre, 135);
       expect(config.settings.startingCash, 1500000);
+      expect(config.settings.maxLineHaulKm, 400);
     });
 
     test('looks things up by tier, id and name', () {
@@ -103,6 +104,34 @@ void main() {
     test('rejects a route crossing missing from the toll table', () {
       final text = edited((j) => j['routes'][0]['crossing'] = 'Atlantis');
       expect(() => EconomyConfig.parse(text), configError('Atlantis'));
+    });
+
+    test('reads cargo allowedTiers', () {
+      expect(config.cargoByName('Fuel').allowedTiers, [10]);
+      expect(config.cargoByName('Containers').allowedTiers, [11]);
+    });
+
+    test('rejects a cargo tier that is not a vehicle tier', () {
+      final text = edited((j) => j['cargo'][0]['allowedTiers'] = [1, 99]);
+      expect(() => EconomyConfig.parse(text), configError('tier 99'));
+    });
+
+    test('rejects missing or empty allowedTiers', () {
+      final missing = edited((j) => j['cargo'][0].remove('allowedTiers'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('cargo[0].allowedTiers is missing'),
+      );
+      final empty = edited((j) => j['cargo'][0]['allowedTiers'] = []);
+      expect(() => EconomyConfig.parse(empty), configError('is empty'));
+    });
+
+    test('rejects missing maxLineHaulKm', () {
+      final text = edited((j) => j['settings'].remove('maxLineHaulKm'));
+      expect(
+        () => EconomyConfig.parse(text),
+        configError('settings.maxLineHaulKm is missing'),
+      );
     });
 
     test('rejects duplicate tiers and route ids', () {

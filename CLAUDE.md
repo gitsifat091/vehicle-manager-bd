@@ -142,7 +142,8 @@ Out (later): multiplayer, auctions, long-haul contracts, bus mode, waterways, ad
 - Never put a paywall or premium currency inside the tutorial or checklist
 - Turbo and boost prices never escalate
 - Vehicle names are fictional (rivers, birds, animals). No real brand names or logos anywhere
-- Line hauls are limited to 400 km
+- Line hauls are limited by `settings.maxLineHaulKm` in economy.json (400 in v0.2). Never hardcode the limit in Dart
+- Cargo compatibility comes from `cargo.allowedTiers` in economy.json. A vehicle can only be assigned a cargo that lists its tier
 
 ## Writing and UI text rules
 

@@ -6,16 +6,19 @@ import 'trip_rejection.dart';
 export 'trip_quote.dart';
 export 'trip_rejection.dart';
 
-/// CLAUDE.md design rule: Line hauls are limited to 400 km.
-const double maxLineHaulKm = 400;
-
-/// Returns why [vehicle] cannot run [route], or null when the trip is allowed.
+/// Returns why [vehicle] cannot run [route] with [cargo], or null when the trip
+/// is allowed.
+///
+/// Line hauls are limited by settings.maxLineHaulKm, and cargo.allowedTiers
+/// decides which vehicles can carry which cargo.
 ///
 /// A route needs highway access when it is a Line haul or crosses a bridge or
 /// ferry. Vehicles with highwayAllowed false (tier 1 and 2) are rejected there.
 TripRejection? checkTripEligibility({
+  required EconomySettings settings,
   required VehicleSpec vehicle,
   required RouteSpec route,
+  required CargoSpec cargo,
   double overloadT = 0,
 }) {
   if (overloadT < 0) {
@@ -24,11 +27,12 @@ TripRejection? checkTripEligibility({
       'Overload cannot be negative (got $overloadT t).',
     );
   }
-  if (route.haulType == HaulType.line && route.distanceKm > maxLineHaulKm) {
+  if (route.haulType == HaulType.line &&
+      route.distanceKm > settings.maxLineHaulKm) {
     return TripRejection(
       TripRejectionReason.lineHaulTooLong,
       'Route ${route.id} is a Line haul of ${route.distanceKm} km, '
-      'above the $maxLineHaulKm km limit.',
+      'above the ${settings.maxLineHaulKm} km limit.',
     );
   }
   final needsHighway =
@@ -38,6 +42,13 @@ TripRejection? checkTripEligibility({
       TripRejectionReason.vehicleNotAllowedOnHighway,
       '${vehicle.name} (tier ${vehicle.tier}) is not allowed on the highway, '
       'so it cannot run route ${route.id}.',
+    );
+  }
+  if (!cargo.allowedTiers.contains(vehicle.tier)) {
+    return TripRejection(
+      TripRejectionReason.cargoNotAllowedForVehicle,
+      '${vehicle.name} (tier ${vehicle.tier}) cannot carry ${cargo.name}. '
+      'Allowed tiers: ${cargo.allowedTiers.join(', ')}.',
     );
   }
   return null;
@@ -59,8 +70,10 @@ TripQuote quoteTrip({
   double overloadT = 0,
 }) {
   final rejection = checkTripEligibility(
+    settings: config.settings,
     vehicle: vehicle,
     route: route,
+    cargo: cargo,
     overloadT: overloadT,
   );
   if (rejection != null) throw TripRejectedException(rejection);

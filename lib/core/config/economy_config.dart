@@ -131,6 +131,19 @@ class EconomyConfig {
         );
       }
     }
+    for (final c in cargo) {
+      if (c.allowedTiers.isEmpty) {
+        throw ConfigException('cargo: "${c.name}" allowedTiers is empty');
+      }
+      for (final tier in c.allowedTiers) {
+        if (!tiers.contains(tier)) {
+          throw ConfigException(
+            'cargo: "${c.name}" allowedTiers lists tier $tier '
+            'which is not a vehicle tier',
+          );
+        }
+      }
+    }
     final routeIds = <String>{};
     for (final r in routes) {
       if (!routeIds.add(r.id)) {
@@ -170,6 +183,7 @@ EconomySettings _parseSettings(_Reader r) => EconomySettings(
   accidentChancePer100Km: r.number('accidentChancePer100Km'),
   accidentGrowthPerFullOverload: r.number('accidentGrowthPerFullOverload'),
   accidentCostShareOfPrice: r.number('accidentCostShareOfPrice'),
+  maxLineHaulKm: r.number('maxLineHaulKm'),
 );
 
 VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
@@ -191,8 +205,11 @@ VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
   unlock: r.string('unlock'),
 );
 
-CargoSpec _parseCargo(_Reader r) =>
-    CargoSpec(name: r.string('name'), rateFactor: r.number('rateFactor'));
+CargoSpec _parseCargo(_Reader r) => CargoSpec(
+  name: r.string('name'),
+  rateFactor: r.number('rateFactor'),
+  allowedTiers: List.unmodifiable(r.integerList('allowedTiers')),
+);
 
 RouteSpec _parseRoute(_Reader r) {
   final haul = r.string('haulType');
@@ -269,6 +286,22 @@ class _Reader {
       throw ConfigException('$path.$key must be a string, got "$value"');
     }
     return value;
+  }
+
+  List<int> integerList(String key) {
+    final value = _require(key);
+    if (value is! List<Object?>) {
+      throw ConfigException('$path.$key must be a list');
+    }
+    final result = <int>[];
+    for (var i = 0; i < value.length; i++) {
+      final item = value[i];
+      if (item is! int) {
+        throw ConfigException('$path.$key[$i] must be a whole number');
+      }
+      result.add(item);
+    }
+    return result;
   }
 
   bool boolean(String key) {

@@ -26,11 +26,28 @@ void main() {
   final config = loadDefaultConfig();
   final general = config.cargoByName('General dry');
 
+  CargoSpec cargoFor(int tier) => general.allowedTiers.contains(tier)
+      ? general
+      : config.cargo.firstWhere((c) => c.allowedTiers.contains(tier));
+
   TripQuote quote(int tier, String routeId, {double over = 0}) => quoteTrip(
     config: config,
     vehicle: config.vehicleByTier(tier),
     route: config.routeById(routeId),
-    cargo: general,
+    cargo: cargoFor(tier),
+    overloadT: over,
+  );
+
+  TripRejection? check(
+    int tier,
+    RouteSpec route, {
+    CargoSpec? cargo,
+    double over = 0,
+  }) => checkTripEligibility(
+    settings: config.settings,
+    vehicle: config.vehicleByTier(tier),
+    route: route,
+    cargo: cargo ?? cargoFor(tier),
     overloadT: over,
   );
 
@@ -80,11 +97,7 @@ void main() {
     });
 
     test('negative overload is rejected', () {
-      final rejection = checkTripEligibility(
-        vehicle: config.vehicleByTier(6),
-        route: config.routeById('R05'),
-        overloadT: -1,
-      );
+      final rejection = check(6, config.routeById('R05'), over: -1);
       expect(rejection!.reason, TripRejectionReason.negativeOverload);
     });
   });
@@ -138,10 +151,7 @@ void main() {
           (r) => r.haulType == HaulType.line,
         );
         for (final route in lineRoutes) {
-          final rejection = checkTripEligibility(
-            vehicle: config.vehicleByTier(tier),
-            route: route,
-          );
+          final rejection = check(tier, route);
           expect(
             rejection?.reason,
             TripRejectionReason.vehicleNotAllowedOnHighway,
@@ -152,22 +162,16 @@ void main() {
     });
 
     test('tier 1 and 2 are rejected on a Local route with a crossing', () {
-      final rejection = checkTripEligibility(
-        vehicle: config.vehicleByTier(2),
-        route: testRoute(haulType: HaulType.local, crossing: 'Padma Bridge'),
+      final rejection = check(
+        2,
+        testRoute(haulType: HaulType.local, crossing: 'Padma Bridge'),
       );
       expect(rejection!.reason, TripRejectionReason.vehicleNotAllowedOnHighway);
     });
 
     test('tier 1 and 2 are allowed on Local routes without a crossing', () {
       for (final tier in [1, 2]) {
-        expect(
-          checkTripEligibility(
-            vehicle: config.vehicleByTier(tier),
-            route: config.routeById('R01'),
-          ),
-          isNull,
-        );
+        expect(check(tier, config.routeById('R01')), isNull);
       }
     });
 
@@ -185,7 +189,7 @@ void main() {
     test('Line haul over 400 km is rejected with a clear reason', () {
       final route = testRoute(id: 'LONG', distanceKm: 401);
       final vehicle = config.vehicleByTier(6);
-      final rejection = checkTripEligibility(vehicle: vehicle, route: route);
+      final rejection = check(6, route);
       expect(rejection!.reason, TripRejectionReason.lineHaulTooLong);
       expect(rejection.message, contains('400'));
       expect(
@@ -200,32 +204,77 @@ void main() {
     });
 
     test('Line haul of exactly 400 km is allowed', () {
-      expect(
-        checkTripEligibility(
-          vehicle: config.vehicleByTier(6),
-          route: testRoute(distanceKm: 400),
-        ),
-        isNull,
-      );
+      expect(check(6, testRoute(distanceKm: 400)), isNull);
     });
 
     test('Local haul over 400 km is not limited', () {
       expect(
-        checkTripEligibility(
-          vehicle: config.vehicleByTier(6),
-          route: testRoute(distanceKm: 500, haulType: HaulType.local),
-        ),
+        check(6, testRoute(distanceKm: 500, haulType: HaulType.local)),
         isNull,
       );
     });
 
     test('every default route is allowed for tier 6', () {
       for (final route in config.routes) {
-        expect(
-          checkTripEligibility(vehicle: config.vehicleByTier(6), route: route),
-          isNull,
-          reason: route.id,
-        );
+        expect(check(6, route), isNull, reason: route.id);
+      }
+    });
+  });
+
+  group('cargo compatibility', () {
+    final fuel = config.cargoByName('Fuel');
+    final containers = config.cargoByName('Containers');
+    final r05 = config.routeById('R05');
+
+    test('fuel on tier 6 is rejected with a clear reason', () {
+      final rejection = check(6, r05, cargo: fuel);
+      expect(rejection!.reason, TripRejectionReason.cargoNotAllowedForVehicle);
+      expect(rejection.message, contains('Fuel'));
+      expect(rejection.message, contains('Jamuna Open'));
+      expect(
+        () => quoteTrip(
+          config: config,
+          vehicle: config.vehicleByTier(6),
+          route: r05,
+          cargo: fuel,
+        ),
+        throwsA(isA<TripRejectedException>()),
+      );
+    });
+
+    test('fuel on tier 10 is allowed', () {
+      expect(check(10, r05, cargo: fuel), isNull);
+      final q = quoteTrip(
+        config: config,
+        vehicle: config.vehicleByTier(10),
+        route: r05,
+        cargo: fuel,
+      );
+      expect(q.cargoName, 'Fuel');
+      expect(q.loadT, 12.75);
+    });
+
+    test('containers are allowed only on tier 11', () {
+      // Local route isolates the cargo rule from the highway rule.
+      final local = config.routeById('R01');
+      for (final v in config.vehicles) {
+        final rejection = check(v.tier, local, cargo: containers);
+        if (v.tier == 11) {
+          expect(rejection, isNull);
+        } else {
+          expect(
+            rejection?.reason,
+            TripRejectionReason.cargoNotAllowedForVehicle,
+            reason: 'tier ${v.tier}',
+          );
+        }
+      }
+      expect(check(11, r05, cargo: containers), isNull);
+    });
+
+    test('every cargo has at least one allowed tier', () {
+      for (final c in config.cargo) {
+        expect(c.allowedTiers, isNotEmpty, reason: c.name);
       }
     });
   });

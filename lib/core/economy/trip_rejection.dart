@@ -3,8 +3,11 @@ enum TripRejectionReason {
   /// Line haul or crosses a bridge or ferry.
   vehicleNotAllowedOnHighway,
 
-  /// Line haul longer than the game's 400 km limit.
+  /// Line haul longer than settings.maxLineHaulKm.
   lineHaulTooLong,
+
+  /// The vehicle's tier is not in the cargo's allowedTiers.
+  cargoNotAllowedForVehicle,
 
   /// Overload below zero.
   negativeOverload,

@@ -79,13 +79,16 @@ void main() {
     });
 
     test('Tier 1 on R05 is rejected: not allowed on highway', () {
-      final vehicle = config.vehicleByTier(1);
-      final route = config.routeById('R05');
-      final rejection = checkTripEligibility(vehicle: vehicle, route: route);
+      final rejection = checkTripEligibility(
+        settings: config.settings,
+        vehicle: config.vehicleByTier(1),
+        route: config.routeById('R05'),
+        cargo: config.cargoByName('Market goods'),
+      );
       expect(rejection, isNotNull);
       expect(rejection!.reason, TripRejectionReason.vehicleNotAllowedOnHighway);
       expect(
-        () => quote(1, 'R05', 'General dry'),
+        () => quote(1, 'R05', 'Market goods'),
         throwsA(isA<TripRejectedException>()),
       );
     });

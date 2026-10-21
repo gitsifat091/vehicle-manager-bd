@@ -33,6 +33,7 @@ class EconomySettings {
     required this.accidentChancePer100Km,
     required this.accidentGrowthPerFullOverload,
     required this.accidentCostShareOfPrice,
+    required this.maxLineHaulKm,
   });
 
   final double dieselPricePerLitre;
@@ -56,6 +57,9 @@ class EconomySettings {
   final double accidentChancePer100Km;
   final double accidentGrowthPerFullOverload;
   final double accidentCostShareOfPrice;
+
+  /// Line hauls longer than this (one-way km) are not allowed.
+  final double maxLineHaulKm;
 }
 
 class VehicleSpec {
@@ -99,10 +103,17 @@ class VehicleSpec {
 }
 
 class CargoSpec {
-  const CargoSpec({required this.name, required this.rateFactor});
+  const CargoSpec({
+    required this.name,
+    required this.rateFactor,
+    required this.allowedTiers,
+  });
 
   final String name;
   final double rateFactor;
+
+  /// Vehicle tiers that can carry this cargo.
+  final List<int> allowedTiers;
 }
 
 class RouteSpec {

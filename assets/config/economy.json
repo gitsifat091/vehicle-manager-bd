@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "currency": "BDT",
   "note": "Generated from economy_model.xlsx. Edit the spreadsheet, then regenerate. Route distances are approximate until replaced with OSRM output.",
   "settings": {
@@ -23,7 +23,8 @@
     "overloadFinePerTon": 2000,
     "accidentChancePer100Km": 0.002,
     "accidentGrowthPerFullOverload": 4,
-    "accidentCostShareOfPrice": 0.1
+    "accidentCostShareOfPrice": 0.1,
+    "maxLineHaulKm": 400
   },
   "vehicles": [
     {
@@ -246,51 +247,105 @@
   "cargo": [
     {
       "name": "Market goods",
-      "rateFactor": 1.2
+      "rateFactor": 1.2,
+      "allowedTiers": [
+        1,
+        2
+      ]
     },
     {
       "name": "Parcels",
-      "rateFactor": 1.5
+      "rateFactor": 1.5,
+      "allowedTiers": [
+        2,
+        3,
+        4,
+        5
+      ]
     },
     {
       "name": "General dry",
-      "rateFactor": 1
+      "rateFactor": 1,
+      "allowedTiers": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        11
+      ]
     },
     {
       "name": "Vegetables",
-      "rateFactor": 1.2
+      "rateFactor": 1.2,
+      "allowedTiers": [
+        3,
+        4,
+        5,
+        6
+      ]
     },
     {
       "name": "Garments",
-      "rateFactor": 1.4
+      "rateFactor": 1.4,
+      "allowedTiers": [
+        5,
+        6,
+        7
+      ]
     },
     {
       "name": "Rice",
-      "rateFactor": 1
+      "rateFactor": 1,
+      "allowedTiers": [
+        4,
+        5,
+        6,
+        7
+      ]
     },
     {
       "name": "Cement and rod",
-      "rateFactor": 0.9
+      "rateFactor": 0.9,
+      "allowedTiers": [
+        6,
+        9
+      ]
     },
     {
       "name": "Sand and stone",
-      "rateFactor": 0.9
+      "rateFactor": 0.9,
+      "allowedTiers": [
+        9
+      ]
     },
     {
       "name": "Fish",
-      "rateFactor": 2.2
+      "rateFactor": 2.2,
+      "allowedTiers": [
+        8
+      ]
     },
     {
       "name": "Fuel",
-      "rateFactor": 1.2
+      "rateFactor": 1.2,
+      "allowedTiers": [
+        10
+      ]
     },
     {
       "name": "Containers",
-      "rateFactor": 1.2
+      "rateFactor": 1.2,
+      "allowedTiers": [
+        11
+      ]
     },
     {
       "name": "Heavy machinery",
-      "rateFactor": 1.2
+      "rateFactor": 1.2,
+      "allowedTiers": [
+        12
+      ]
     }
   ],
   "tolls": {
