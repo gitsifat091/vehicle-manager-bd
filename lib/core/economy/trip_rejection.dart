@@ -3,6 +3,10 @@ enum TripRejectionReason {
   /// Line haul or crosses a bridge or ferry.
   vehicleNotAllowedOnHighway,
 
+  /// The vehicle's allowedRoutes list does not include the route (for
+  /// example the Sonar Van, which only runs the M routes).
+  routeNotAllowedForVehicle,
+
   /// Line haul longer than settings.maxLineHaulKm.
   lineHaulTooLong,
 

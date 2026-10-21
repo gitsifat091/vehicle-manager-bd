@@ -1,17 +1,20 @@
 // Simulates the first hours of play with the real game code and a greedy
 // buyer, to check the first-hour pacing against docs/economy_model.xlsx.
 //
-//   dart run tool/first_hours_sim.dart [hours] [seeds]
+//   dart run tool/first_hours_sim.dart [hours] [seeds] [policies]
 //
-// Defaults: 3 hours, 20 seeds. It changes no balance numbers: everything comes
-// from assets/config/economy.json.
+// Defaults: 3 hours, 20 seeds, policies ABCD (for example "ABD" runs three).
+// It changes no balance numbers: everything comes from
+// assets/config/economy.json.
 //
 // The player model
 // - Starts with the starting cash and one free Sathi Plus on R01 (General dry).
 // - The app stays in the foreground the whole time and ticks every 3 seconds,
 //   so Turbo Start runs for the first 60 minutes.
-// - Whenever cash allows, it buys the cheapest useful vehicle and sends it out
-//   at once. Useful means: it can run a route that starts in Dhaka (no
+// - Whenever cash and a garage slot allow (the free Sathi Plus takes one, no
+//   selling), it buys a useful vehicle and sends it out at once. Policies A to
+//   C pick the cheapest one; policy D picks the affordable one with the
+//   highest profit per real hour. Useful means: it can run a route that starts in Dhaka (no
 //   terminal needed yet), it earns a profit, and the route still has demand
 //   left for it. "Demand left" means the route's daily demand minus what the
 //   fleet already uses per game day, so the new vehicle would not starve.
@@ -24,6 +27,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:vehicle_manager_bd/core/config/economy_config.dart';
+import 'package:vehicle_manager_bd/core/economy/purchase_rules.dart';
 import 'package:vehicle_manager_bd/core/economy/trip_planner.dart';
 import 'package:vehicle_manager_bd/core/sim/game_calendar.dart';
 import 'package:vehicle_manager_bd/core/sim/game_simulator.dart';
@@ -39,9 +43,21 @@ const dhakaRoutes = {
 const tick = Duration(seconds: 3);
 
 class Policy {
-  const Policy(this.name, {required this.minTier, required this.includeLine});
+  const Policy(
+    this.id,
+    this.name, {
+    required this.minTier,
+    required this.includeLine,
+    this.cheapestFirst = true,
+  });
 
+  /// One letter, used to pick policies on the command line.
+  final String id;
   final String name;
+
+  /// True: buy the cheapest useful vehicle. False: buy the affordable useful
+  /// vehicle with the highest profit per real hour.
+  final bool cheapestFirst;
 
   /// Vehicles below this tier are never bought.
   final int minTier;
@@ -62,27 +78,43 @@ void main(List<String> args) {
   print('Spreadsheet (First Hour sheet): 3 purchases in 60 min, 4 in 4 h, '
       'fleet profit after turbo Tk 2,47,607 per hour at 1x');
 
+  print('Garage slots: ${config.settings.startingGarageSlots} '
+      '(the free Sathi Plus counts); no selling');
+
   const policies = [
     Policy(
-      'POLICY A: all tiers, Local hauls only (pedal vans and 3-wheelers allowed)',
+      'A',
+      'POLICY A: cheapest useful vehicle, all tiers, Local hauls only',
       minTier: 1,
       includeLine: false,
     ),
     Policy(
-      'POLICY B: tier 3 and up, Local hauls only (the baseline: no attention '
-      'needed after buying)',
+      'B',
+      'POLICY B: cheapest useful vehicle, tier 3 and up, Local hauls only '
+      '(no attention needed after buying)',
       minTier: 3,
       includeLine: false,
     ),
     Policy(
-      'POLICY C: tier 3 and up, Local and Line hauls (an attentive player '
-      'sends every Line haul out again at once)',
+      'C',
+      'POLICY C: cheapest useful vehicle, tier 3 and up, Local and Line hauls '
+      '(an attentive player sends every Line haul out again at once)',
       minTier: 3,
       includeLine: true,
     ),
+    Policy(
+      'D',
+      'POLICY D: highest profit per real hour among affordable useful '
+      'vehicles, all tiers, Local hauls only',
+      minTier: 1,
+      includeLine: false,
+      cheapestFirst: false,
+    ),
   ];
+  final only = args.length > 2 ? args[2].toUpperCase() : 'ABCD';
 
-  for (final policy in policies) {
+  final results = <String, List<RunResult>>{};
+  for (final policy in policies.where((p) => only.contains(p.id))) {
     print('');
     print('=' * 72);
     print(policy.name);
@@ -104,7 +136,18 @@ void main(List<String> args) {
 
     print('');
     print('Over $seeds seeds (min / median / max)');
+    results[policy.id] = runs;
     summary('Purchases in hour 1', runs.map((r) => r.purchasesBefore(60)));
+    summary(
+      'Minute the garage cap is reached',
+      runs.map((r) => r.capReachedMin),
+      unit: 'min',
+    );
+    for (final vehicle in config.vehicles) {
+      final counts = runs.map((r) => r.boughtOfTier(vehicle.tier)).toList();
+      if (counts.every((c) => c == 0)) continue;
+      summary('Bought: tier ${vehicle.tier} ${vehicle.name}', counts);
+    }
     summary(
       'Minutes from turbo end (60) to next purchase',
       runs.map((r) => r.minutesToNextPurchaseAfterTurbo()),
@@ -129,7 +172,32 @@ void main(List<String> args) {
       'Income in the last hour (Tk)',
       runs.map((r) => r.incomeInHour(hours)),
     );
+    summary('Total income over $hours h (Tk)', runs.map((r) => r.totalIncome));
     summary('Cash at end (Tk)', runs.map((r) => r.finalCash));
+    summary(
+      'Net worth at end: cash + vehicle prices (Tk)',
+      runs.map((r) => r.netWorth),
+    );
+  }
+
+  if (results.containsKey('A') && results.containsKey('D')) {
+    num median(Iterable<num> v) => (v.toList()..sort())[v.length ~/ 2];
+    final a = results['A']!;
+    final d = results['D']!;
+    print('');
+    print('=' * 72);
+    print('A (cheapest first) against D (highest profit per hour), medians');
+    print('=' * 72);
+    String row(String label, num Function(RunResult) f) => '  '
+        '${label.padRight(34)} A: ${money(median(a.map(f)).round()).padLeft(11)}'
+        '   D: ${money(median(d.map(f)).round()).padLeft(11)}';
+    print(row('Total income over $hours h (Tk)', (r) => r.totalIncome));
+    print(row('Income in hour $hours (Tk)', (r) => r.incomeInHour(hours)));
+    print(row('Cash at end (Tk)', (r) => r.finalCash));
+    print(row('Net worth at end (Tk)', (r) => r.netWorth));
+    final aAhead = median(a.map((r) => r.totalIncome)) >
+        median(d.map((r) => r.totalIncome));
+    print('  Cheapest first earns more in total than D: $aAhead');
   }
 }
 
@@ -224,9 +292,10 @@ List<Candidate> buildCandidates(EconomyConfig config, Policy policy) {
 }
 
 class Purchase {
-  Purchase(this.minute, this.label, this.price, this.cashAfter);
+  Purchase(this.minute, this.tier, this.label, this.price, this.cashAfter);
 
   final double minute;
+  final int tier;
   final String label;
   final int price;
   final int cashAfter;
@@ -245,12 +314,43 @@ class RunResult {
   int finalCash = 0;
   int completedTrips = 0;
 
+  /// Real minute the last free garage slot was taken.
+  double? capReachedMin;
+
+  /// Prices of every vehicle owned at the end, the free starter included.
+  int fleetValue = 0;
+
+  int get totalIncome => incomeByHour.values.fold(0, (a, b) => a + b);
+
+  int get netWorth => finalCash + fleetValue;
+
+  int boughtOfTier(int tier) => purchases.where((p) => p.tier == tier).length;
+
   double get r01DryShareOfLastHour => r01DrySecondsLastHour / 3600;
 
   int incomeInHour(int hour) => incomeByHour[hour - 1] ?? 0;
 
   int purchasesBefore(double minute) =>
       purchases.where((p) => p.minute < minute).length;
+
+  /// Purchases of one vehicle name (labels start with the vehicle name),
+  /// optionally only those before [beforeMinute].
+  int boughtOf(String vehicleName, {double? beforeMinute}) => purchases
+      .where(
+        (p) =>
+            p.label.startsWith('$vehicleName on') &&
+            (beforeMinute == null || p.minute < beforeMinute),
+      )
+      .length;
+
+  Map<String, int> countByVehicle() {
+    final counts = <String, int>{};
+    for (final p in purchases) {
+      final name = p.label.split(' on ').first;
+      counts[name] = (counts[name] ?? 0) + 1;
+    }
+    return counts;
+  }
 
   /// Minutes between the end of the turbo (minute 60) and the next purchase.
   double? minutesToNextPurchaseAfterTurbo() {
@@ -274,6 +374,7 @@ class RunResult {
         'cash after Tk ${money(p.cashAfter).padLeft(10)}',
       );
     }
+    print('  bought: ${countByVehicle()}');
     for (var h = 0; h < hours; h++) {
       print('  income in hour ${h + 1}: Tk ${money(incomeByHour[h] ?? 0)}');
     }
@@ -306,9 +407,10 @@ RunResult simulate({
   );
   final candidates = buildCandidates(config, policy)
     ..sort((a, b) {
+      final byProfit = b.profitPerRealHour.compareTo(a.profitPerRealHour);
+      if (!policy.cheapestFirst) return byProfit;
       final byPrice = a.vehicle.priceTk.compareTo(b.vehicle.priceTk);
-      if (byPrice != 0) return byPrice;
-      return b.profitPerRealHour.compareTo(a.profitPerRealHour);
+      return byPrice != 0 ? byPrice : byProfit;
     });
 
   var company = Company.newGame(config: config, name: 'Sim', now: start);
@@ -419,10 +521,16 @@ RunResult simulate({
       if (change != null) apply(change, hourIndex: hourIndex);
     }
 
-    // Buy the cheapest useful vehicle, again and again while cash allows.
+    // Buy the next vehicle by the policy's order, again and again while cash
+    // and garage slots allow.
     var bought = true;
     while (bought) {
       bought = false;
+      final noSlot = checkGarageSlot(
+        settings: config.settings,
+        vehiclesOwned: vehicles.length,
+      );
+      if (noSlot != null) break;
       for (final c in candidates) {
         if (c.vehicle.priceTk > company.cash) continue;
         final spare =
@@ -440,8 +548,16 @@ RunResult simulate({
         );
         commit(c.route.id, c.tonsPerGameDay);
         result.purchases.add(
-          Purchase(minute, c.label, c.vehicle.priceTk, company.cash),
+          Purchase(minute, c.vehicle.tier, c.label, c.vehicle.priceTk,
+              company.cash),
         );
+        if (checkGarageSlot(
+              settings: config.settings,
+              vehiclesOwned: vehicles.length,
+            ) !=
+            null) {
+          result.capReachedMin ??= minute;
+        }
         final outcome = sim.dispatchNow(
           world: world(),
           vehicleId: id,
@@ -484,6 +600,10 @@ RunResult simulate({
   }
 
   result.vehicleCount = vehicles.length;
+  result.fleetValue = vehicles.values.fold(
+    0,
+    (sum, v) => sum + config.vehicleByTier(v.tier).priceTk,
+  );
   result.finalCash = company.cash;
   result.completedTrips = company.completedTrips;
   return result;

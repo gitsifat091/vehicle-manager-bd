@@ -126,6 +126,49 @@ void main() {
       expect(() => EconomyConfig.parse(empty), configError('is empty'));
     });
 
+    test('reads vehicle allowedRoutes: only tier 1 is limited', () {
+      expect(config.vehicleByTier(1).allowedRoutes, ['M01', 'M02']);
+      expect(config.vehicleByTier(1).canRunRoute('M02'), true);
+      expect(config.vehicleByTier(1).canRunRoute('R01'), false);
+      for (final v in config.vehicles.where((v) => v.tier != 1)) {
+        expect(v.allowedRoutes, isEmpty, reason: 'tier ${v.tier}');
+      }
+    });
+
+    test('rejects an allowedRoutes entry that is not a route id', () {
+      final text = edited(
+        (j) => j['vehicles'][0]['allowedRoutes'] = ['M01', 'X99'],
+      );
+      expect(() => EconomyConfig.parse(text), configError('"X99"'));
+    });
+
+    test('rejects missing or non-string allowedRoutes', () {
+      final missing = edited((j) => j['vehicles'][0].remove('allowedRoutes'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('vehicles[0].allowedRoutes is missing'),
+      );
+      final wrong = edited((j) => j['vehicles'][0]['allowedRoutes'] = [1]);
+      expect(
+        () => EconomyConfig.parse(wrong),
+        configError('allowedRoutes[0] must be a string'),
+      );
+    });
+
+    test('reads startingGarageSlots and rejects a missing or zero value', () {
+      expect(config.settings.startingGarageSlots, 6);
+      final missing = edited((j) => j['settings'].remove('startingGarageSlots'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('settings.startingGarageSlots is missing'),
+      );
+      final zero = edited((j) => j['settings']['startingGarageSlots'] = 0);
+      expect(
+        () => EconomyConfig.parse(zero),
+        configError('startingGarageSlots must be at least 1'),
+      );
+    });
+
     test('rejects missing maxLineHaulKm', () {
       final text = edited((j) => j['settings'].remove('maxLineHaulKm'));
       expect(

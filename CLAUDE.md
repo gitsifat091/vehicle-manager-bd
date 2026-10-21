@@ -148,6 +148,8 @@ Out (later): multiplayer, auctions, long-haul contracts, bus mode, waterways, ad
 - Vehicle names are fictional (rivers, birds, animals). No real brand names or logos anywhere
 - Line hauls are limited by `settings.maxLineHaulKm` in economy.json (400 in v0.2). Never hardcode the limit in Dart
 - Cargo compatibility comes from `cargo.allowedTiers` in economy.json. A vehicle can only be assigned a cargo that lists its tier
+- A vehicle with a non-empty `vehicles[].allowedRoutes` can only run those routes (tier 1 runs M01 and M02). Empty means any route
+- The garage holds `settings.startingGarageSlots` vehicles (6, counting the free starter). A purchase with no free slot is rejected through `checkGarageSlot`. Never hardcode the number
 
 ## Writing and UI text rules
 

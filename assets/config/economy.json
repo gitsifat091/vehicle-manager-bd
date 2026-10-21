@@ -1,5 +1,5 @@
 {
-  "version": "0.2",
+  "version": "0.3",
   "currency": "BDT",
   "note": "Generated from economy_model.xlsx. Edit the spreadsheet, then regenerate. Route distances are approximate until replaced with OSRM output.",
   "settings": {
@@ -24,7 +24,8 @@
     "accidentChancePer100Km": 0.002,
     "accidentGrowthPerFullOverload": 4,
     "accidentCostShareOfPrice": 0.1,
-    "maxLineHaulKm": 400
+    "maxLineHaulKm": 400,
+    "startingGarageSlots": 6
   },
   "vehicles": [
     {
@@ -43,7 +44,8 @@
       "smallLoadPremium": 2.5,
       "tollClass": "Not on highway",
       "highwayAllowed": false,
-      "unlock": "Start"
+      "unlock": "Start",
+      "allowedRoutes": ["M01", "M02"]
     },
     {
       "tier": 2,
@@ -61,7 +63,8 @@
       "smallLoadPremium": 2.7,
       "tollClass": "Not on highway",
       "highwayAllowed": false,
-      "unlock": "Tier 1"
+      "unlock": "Tier 1",
+      "allowedRoutes": []
     },
     {
       "tier": 3,
@@ -79,7 +82,8 @@
       "smallLoadPremium": 3,
       "tollClass": "Light",
       "highwayAllowed": true,
-      "unlock": "5 deliveries"
+      "unlock": "5 deliveries",
+      "allowedRoutes": []
     },
     {
       "tier": 4,
@@ -97,7 +101,8 @@
       "smallLoadPremium": 2.8,
       "tollClass": "Light",
       "highwayAllowed": true,
-      "unlock": "Starter vehicle"
+      "unlock": "Starter vehicle",
+      "allowedRoutes": []
     },
     {
       "tier": 5,
@@ -115,7 +120,8 @@
       "smallLoadPremium": 1.6,
       "tollClass": "Small truck",
       "highwayAllowed": true,
-      "unlock": "Light license"
+      "unlock": "Light license",
+      "allowedRoutes": []
     },
     {
       "tier": 6,
@@ -133,7 +139,8 @@
       "smallLoadPremium": 1,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlock": "Medium license"
+      "unlock": "Medium license",
+      "allowedRoutes": []
     },
     {
       "tier": 7,
@@ -151,7 +158,8 @@
       "smallLoadPremium": 1.05,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlock": "Factory contract"
+      "unlock": "Factory contract",
+      "allowedRoutes": []
     },
     {
       "tier": 8,
@@ -169,7 +177,8 @@
       "smallLoadPremium": 1,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlock": "Cold chain license"
+      "unlock": "Cold chain license",
+      "allowedRoutes": []
     },
     {
       "tier": 9,
@@ -187,7 +196,8 @@
       "smallLoadPremium": 1.2,
       "tollClass": "Big truck",
       "highwayAllowed": true,
-      "unlock": "Construction project"
+      "unlock": "Construction project",
+      "allowedRoutes": []
     },
     {
       "tier": 10,
@@ -205,7 +215,8 @@
       "smallLoadPremium": 1,
       "tollClass": "Big truck",
       "highwayAllowed": true,
-      "unlock": "Hazmat license"
+      "unlock": "Hazmat license",
+      "allowedRoutes": []
     },
     {
       "tier": 11,
@@ -223,7 +234,8 @@
       "smallLoadPremium": 0.6,
       "tollClass": "Trailer",
       "highwayAllowed": true,
-      "unlock": "Heavy license"
+      "unlock": "Heavy license",
+      "allowedRoutes": []
     },
     {
       "tier": 12,
@@ -241,7 +253,8 @@
       "smallLoadPremium": 0.6,
       "tollClass": "Trailer+1 axle",
       "highwayAllowed": true,
-      "unlock": "Late game"
+      "unlock": "Late game",
+      "allowedRoutes": []
     }
   ],
   "cargo": [

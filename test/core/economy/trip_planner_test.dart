@@ -169,9 +169,38 @@ void main() {
       expect(rejection!.reason, TripRejectionReason.vehicleNotAllowedOnHighway);
     });
 
-    test('tier 1 and 2 are allowed on Local routes without a crossing', () {
-      for (final tier in [1, 2]) {
-        expect(check(tier, config.routeById('R01')), isNull);
+    test('tier 2 is allowed on Local routes without a crossing', () {
+      for (final id in ['M01', 'M02', 'R01', 'R02', 'R03']) {
+        expect(check(2, config.routeById(id)), isNull, reason: id);
+      }
+    });
+
+    test('tier 1 runs only the M routes', () {
+      final sonar = config.vehicleByTier(1);
+      expect(sonar.allowedRoutes, ['M01', 'M02']);
+      for (final id in ['M01', 'M02']) {
+        expect(check(1, config.routeById(id)), isNull, reason: id);
+      }
+      for (final id in ['R01', 'R02', 'R03', 'R14']) {
+        expect(
+          check(1, config.routeById(id))?.reason,
+          TripRejectionReason.routeNotAllowedForVehicle,
+          reason: id,
+        );
+      }
+    });
+
+    test('the highway rule is reported before the route list', () {
+      expect(
+        check(1, config.routeById('R05'))?.reason,
+        TripRejectionReason.vehicleNotAllowedOnHighway,
+      );
+    });
+
+    test('a vehicle with no route list can run any route', () {
+      for (final v in config.vehicles.where((v) => v.tier != 1)) {
+        expect(v.allowedRoutes, isEmpty, reason: 'tier ${v.tier}');
+        expect(v.canRunRoute('R01'), true);
       }
     });
 
@@ -258,7 +287,11 @@ void main() {
       // Local route isolates the cargo rule from the highway rule.
       final local = config.routeById('R01');
       for (final v in config.vehicles) {
-        final rejection = check(v.tier, local, cargo: containers);
+        // A vehicle with a route list uses one of its own routes.
+        final route = v.allowedRoutes.isEmpty
+            ? local
+            : config.routeById(v.allowedRoutes.first);
+        final rejection = check(v.tier, route, cargo: containers);
         if (v.tier == 11) {
           expect(rejection, isNull);
         } else {

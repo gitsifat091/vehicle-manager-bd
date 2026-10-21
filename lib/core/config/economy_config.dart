@@ -149,6 +149,23 @@ class EconomyConfig {
       if (!routeIds.add(r.id)) {
         throw ConfigException('routes: duplicate id "${r.id}"');
       }
+    }
+    if (settings.startingGarageSlots < 1) {
+      throw const ConfigException(
+        'settings.startingGarageSlots must be at least 1',
+      );
+    }
+    for (final v in vehicles) {
+      for (final id in v.allowedRoutes) {
+        if (!routeIds.contains(id)) {
+          throw ConfigException(
+            'vehicles: tier ${v.tier} allowedRoutes lists "$id" '
+            'which is not a route id',
+          );
+        }
+      }
+    }
+    for (final r in routes) {
       for (final entry in tolls.entries) {
         if (!entry.value.containsKey(r.crossing)) {
           throw ConfigException(
@@ -184,6 +201,7 @@ EconomySettings _parseSettings(_Reader r) => EconomySettings(
   accidentGrowthPerFullOverload: r.number('accidentGrowthPerFullOverload'),
   accidentCostShareOfPrice: r.number('accidentCostShareOfPrice'),
   maxLineHaulKm: r.number('maxLineHaulKm'),
+  startingGarageSlots: r.integer('startingGarageSlots'),
 );
 
 VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
@@ -203,6 +221,7 @@ VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
   tollClass: r.string('tollClass'),
   highwayAllowed: r.boolean('highwayAllowed'),
   unlock: r.string('unlock'),
+  allowedRoutes: List.unmodifiable(r.stringList('allowedRoutes')),
 );
 
 CargoSpec _parseCargo(_Reader r) => CargoSpec(
@@ -298,6 +317,22 @@ class _Reader {
       final item = value[i];
       if (item is! int) {
         throw ConfigException('$path.$key[$i] must be a whole number');
+      }
+      result.add(item);
+    }
+    return result;
+  }
+
+  List<String> stringList(String key) {
+    final value = _require(key);
+    if (value is! List<Object?>) {
+      throw ConfigException('$path.$key must be a list');
+    }
+    final result = <String>[];
+    for (var i = 0; i < value.length; i++) {
+      final item = value[i];
+      if (item is! String) {
+        throw ConfigException('$path.$key[$i] must be a string');
       }
       result.add(item);
     }

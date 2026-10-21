@@ -34,6 +34,7 @@ class EconomySettings {
     required this.accidentGrowthPerFullOverload,
     required this.accidentCostShareOfPrice,
     required this.maxLineHaulKm,
+    required this.startingGarageSlots,
   });
 
   final double dieselPricePerLitre;
@@ -60,6 +61,10 @@ class EconomySettings {
 
   /// Line hauls longer than this (one-way km) are not allowed.
   final double maxLineHaulKm;
+
+  /// Vehicles the garage holds at the start, counting the free Sathi Plus.
+  /// Buying with no free slot is rejected (see checkGarageSlot).
+  final int startingGarageSlots;
 }
 
 class VehicleSpec {
@@ -80,6 +85,7 @@ class VehicleSpec {
     required this.tollClass,
     required this.highwayAllowed,
     required this.unlock,
+    this.allowedRoutes = const [],
   });
 
   final int tier;
@@ -100,6 +106,13 @@ class VehicleSpec {
   final String tollClass;
   final bool highwayAllowed;
   final String unlock;
+
+  /// Route ids this vehicle is limited to. Empty means any route.
+  final List<String> allowedRoutes;
+
+  /// Whether the vehicle's own route limit lets it run [routeId].
+  bool canRunRoute(String routeId) =>
+      allowedRoutes.isEmpty || allowedRoutes.contains(routeId);
 }
 
 class CargoSpec {

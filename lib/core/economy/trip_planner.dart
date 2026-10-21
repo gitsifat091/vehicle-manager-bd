@@ -14,6 +14,8 @@ export 'trip_rejection.dart';
 ///
 /// A route needs highway access when it is a Line haul or crosses a bridge or
 /// ferry. Vehicles with highwayAllowed false (tier 1 and 2) are rejected there.
+///
+/// A vehicle with a non-empty allowedRoutes list can only run those routes.
 TripRejection? checkTripEligibility({
   required EconomySettings settings,
   required VehicleSpec vehicle,
@@ -42,6 +44,13 @@ TripRejection? checkTripEligibility({
       TripRejectionReason.vehicleNotAllowedOnHighway,
       '${vehicle.name} (tier ${vehicle.tier}) is not allowed on the highway, '
       'so it cannot run route ${route.id}.',
+    );
+  }
+  if (!vehicle.canRunRoute(route.id)) {
+    return TripRejection(
+      TripRejectionReason.routeNotAllowedForVehicle,
+      '${vehicle.name} (tier ${vehicle.tier}) can only run routes '
+      '${vehicle.allowedRoutes.join(', ')}, not ${route.id}.',
     );
   }
   if (!cargo.allowedTiers.contains(vehicle.tier)) {
