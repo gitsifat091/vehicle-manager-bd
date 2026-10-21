@@ -1,0 +1,525 @@
+{
+  "version": "0.1",
+  "currency": "BDT",
+  "note": "Generated from economy_model.xlsx. Edit the spreadsheet, then regenerate. Route distances are approximate until replaced with OSRM output.",
+  "settings": {
+    "dieselPricePerLitre": 135,
+    "baseFarePerTon": 300,
+    "ratePerTonKm": 8.5,
+    "freightMultiplier": 1.5,
+    "gameMinutesPerRealMinute": 60,
+    "turboPhase1EndMin": 20,
+    "turboPhase1Speed": 20,
+    "turboPhase2EndMin": 40,
+    "turboPhase2Speed": 10,
+    "turboPhase3EndMin": 60,
+    "turboPhase3Speed": 5,
+    "startingCash": 1500000,
+    "firstTerminalPrice": 800000,
+    "extraFuelPerFullOverload": 0.3,
+    "extraWearPerFullOverload": 1.5,
+    "weighbridgeCheckChance": 0.35,
+    "overloadFineBase": 5000,
+    "overloadFinePerTon": 2000,
+    "accidentChancePer100Km": 0.002,
+    "accidentGrowthPerFullOverload": 4,
+    "accidentCostShareOfPrice": 0.1
+  },
+  "vehicles": [
+    {
+      "tier": 1,
+      "name": "Sonar Van",
+      "realWorld": "Pedal van",
+      "priceTk": 20000,
+      "legalPayloadT": 0.3,
+      "maxLoadT": 0.5,
+      "speedKmh": 8,
+      "mileageKmPerL": 0,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 0.2,
+      "crewWageTkPerGameHour": 50,
+      "loadTimeGameH": 0.3,
+      "smallLoadPremium": 2.5,
+      "tollClass": "Not on highway",
+      "highwayAllowed": false,
+      "unlock": "Start"
+    },
+    {
+      "tier": 2,
+      "name": "Bijli Cargo",
+      "realWorld": "Battery cargo 3-wheeler",
+      "priceTk": 150000,
+      "legalPayloadT": 0.5,
+      "maxLoadT": 0.8,
+      "speedKmh": 20,
+      "mileageKmPerL": 0,
+      "otherEnergyTkPerKm": 1.5,
+      "maintenanceTkPerKm": 0.5,
+      "crewWageTkPerGameHour": 60,
+      "loadTimeGameH": 0.3,
+      "smallLoadPremium": 2.7,
+      "tollClass": "Not on highway",
+      "highwayAllowed": false,
+      "unlock": "Tier 1"
+    },
+    {
+      "tier": 3,
+      "name": "Tuntuni Mini",
+      "realWorld": "Tata Ace class",
+      "priceTk": 1000000,
+      "legalPayloadT": 0.8,
+      "maxLoadT": 1.5,
+      "speedKmh": 45,
+      "mileageKmPerL": 15,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 1.5,
+      "crewWageTkPerGameHour": 70,
+      "loadTimeGameH": 0.5,
+      "smallLoadPremium": 3,
+      "tollClass": "Light",
+      "highwayAllowed": true,
+      "unlock": "5 deliveries"
+    },
+    {
+      "tier": 4,
+      "name": "Sathi Plus",
+      "realWorld": "1.5 t pickup (Dost class)",
+      "priceTk": 1300000,
+      "legalPayloadT": 1.5,
+      "maxLoadT": 3,
+      "speedKmh": 50,
+      "mileageKmPerL": 12,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 2,
+      "crewWageTkPerGameHour": 80,
+      "loadTimeGameH": 0.5,
+      "smallLoadPremium": 2.8,
+      "tollClass": "Light",
+      "highwayAllowed": true,
+      "unlock": "Starter vehicle"
+    },
+    {
+      "tier": 5,
+      "name": "Meghna 14",
+      "realWorld": "14 ft covered van",
+      "priceTk": 2500000,
+      "legalPayloadT": 4,
+      "maxLoadT": 7,
+      "speedKmh": 45,
+      "mileageKmPerL": 8,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 3,
+      "crewWageTkPerGameHour": 110,
+      "loadTimeGameH": 1,
+      "smallLoadPremium": 1.6,
+      "tollClass": "Small truck",
+      "highwayAllowed": true,
+      "unlock": "Light license"
+    },
+    {
+      "tier": 6,
+      "name": "Jamuna Open",
+      "realWorld": "6-wheel truck (LPT 1615 class)",
+      "priceTk": 3200000,
+      "legalPayloadT": 10,
+      "maxLoadT": 22,
+      "speedKmh": 40,
+      "mileageKmPerL": 4.5,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 4,
+      "crewWageTkPerGameHour": 160,
+      "loadTimeGameH": 2,
+      "smallLoadPremium": 1,
+      "tollClass": "Medium truck",
+      "highwayAllowed": true,
+      "unlock": "Medium license"
+    },
+    {
+      "tier": 7,
+      "name": "Karnaphuli 20",
+      "realWorld": "20-23 ft covered van",
+      "priceTk": 3500000,
+      "legalPayloadT": 10,
+      "maxLoadT": 18,
+      "speedKmh": 40,
+      "mileageKmPerL": 4.5,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 4.5,
+      "crewWageTkPerGameHour": 160,
+      "loadTimeGameH": 2,
+      "smallLoadPremium": 1.05,
+      "tollClass": "Medium truck",
+      "highwayAllowed": true,
+      "unlock": "Factory contract"
+    },
+    {
+      "tier": 8,
+      "name": "Himaloy Reefer",
+      "realWorld": "Freezer van",
+      "priceTk": 4500000,
+      "legalPayloadT": 6,
+      "maxLoadT": 7,
+      "speedKmh": 40,
+      "mileageKmPerL": 3.5,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 6,
+      "crewWageTkPerGameHour": 180,
+      "loadTimeGameH": 2,
+      "smallLoadPremium": 1,
+      "tollClass": "Medium truck",
+      "highwayAllowed": true,
+      "unlock": "Cold chain license"
+    },
+    {
+      "tier": 9,
+      "name": "Pahari Tipper",
+      "realWorld": "10-wheel tipper",
+      "priceTk": 6000000,
+      "legalPayloadT": 18,
+      "maxLoadT": 30,
+      "speedKmh": 30,
+      "mileageKmPerL": 3,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 7,
+      "crewWageTkPerGameHour": 170,
+      "loadTimeGameH": 1.5,
+      "smallLoadPremium": 1.2,
+      "tollClass": "Big truck",
+      "highwayAllowed": true,
+      "unlock": "Construction project"
+    },
+    {
+      "tier": 10,
+      "name": "Telrani",
+      "realWorld": "Fuel tanker",
+      "priceTk": 5000000,
+      "legalPayloadT": 12.75,
+      "maxLoadT": 12.75,
+      "speedKmh": 35,
+      "mileageKmPerL": 3.5,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 6,
+      "crewWageTkPerGameHour": 200,
+      "loadTimeGameH": 1.5,
+      "smallLoadPremium": 1,
+      "tollClass": "Big truck",
+      "highwayAllowed": true,
+      "unlock": "Hazmat license"
+    },
+    {
+      "tier": 11,
+      "name": "Bongo Mover 40",
+      "realWorld": "Prime mover + 40 ft trailer",
+      "priceTk": 6500000,
+      "legalPayloadT": 28,
+      "maxLoadT": 35,
+      "speedKmh": 35,
+      "mileageKmPerL": 2.5,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 9,
+      "crewWageTkPerGameHour": 220,
+      "loadTimeGameH": 2.5,
+      "smallLoadPremium": 0.6,
+      "tollClass": "Trailer",
+      "highwayAllowed": true,
+      "unlock": "Heavy license"
+    },
+    {
+      "tier": 12,
+      "name": "Hati Lowbed",
+      "realWorld": "Low-bed trailer",
+      "priceTk": 8000000,
+      "legalPayloadT": 40,
+      "maxLoadT": 40,
+      "speedKmh": 25,
+      "mileageKmPerL": 2,
+      "otherEnergyTkPerKm": 0,
+      "maintenanceTkPerKm": 12,
+      "crewWageTkPerGameHour": 260,
+      "loadTimeGameH": 3,
+      "smallLoadPremium": 0.6,
+      "tollClass": "Trailer+1 axle",
+      "highwayAllowed": true,
+      "unlock": "Late game"
+    }
+  ],
+  "cargo": [
+    {
+      "name": "Market goods",
+      "rateFactor": 1.2
+    },
+    {
+      "name": "Parcels",
+      "rateFactor": 1.5
+    },
+    {
+      "name": "General dry",
+      "rateFactor": 1
+    },
+    {
+      "name": "Vegetables",
+      "rateFactor": 1.2
+    },
+    {
+      "name": "Garments",
+      "rateFactor": 1.4
+    },
+    {
+      "name": "Rice",
+      "rateFactor": 1
+    },
+    {
+      "name": "Cement and rod",
+      "rateFactor": 0.9
+    },
+    {
+      "name": "Sand and stone",
+      "rateFactor": 0.9
+    },
+    {
+      "name": "Fish",
+      "rateFactor": 2.2
+    },
+    {
+      "name": "Fuel",
+      "rateFactor": 1.2
+    },
+    {
+      "name": "Containers",
+      "rateFactor": 1.2
+    },
+    {
+      "name": "Heavy machinery",
+      "rateFactor": 1.2
+    }
+  ],
+  "tolls": {
+    "Not on highway": {
+      "None": 0,
+      "Padma Bridge": 0,
+      "Jamuna Bridge": 0,
+      "Meghna+Gumti": 0,
+      "Paturia Ferry": 0
+    },
+    "Light": {
+      "None": 0,
+      "Padma Bridge": 1200,
+      "Jamuna Bridge": 600,
+      "Meghna+Gumti": 180,
+      "Paturia Ferry": 600
+    },
+    "Small truck": {
+      "None": 0,
+      "Padma Bridge": 1600,
+      "Jamuna Bridge": 1000,
+      "Meghna+Gumti": 500,
+      "Paturia Ferry": 740
+    },
+    "Medium truck": {
+      "None": 0,
+      "Padma Bridge": 2800,
+      "Jamuna Bridge": 1600,
+      "Meghna+Gumti": 800,
+      "Paturia Ferry": 1460
+    },
+    "Big truck": {
+      "None": 0,
+      "Padma Bridge": 5500,
+      "Jamuna Bridge": 2000,
+      "Meghna+Gumti": 1000,
+      "Paturia Ferry": 2000
+    },
+    "Trailer": {
+      "None": 0,
+      "Padma Bridge": 6000,
+      "Jamuna Bridge": 3000,
+      "Meghna+Gumti": 2500,
+      "Paturia Ferry": 2800
+    },
+    "Trailer+1 axle": {
+      "None": 0,
+      "Padma Bridge": 7500,
+      "Jamuna Bridge": 4000,
+      "Meghna+Gumti": 3000,
+      "Paturia Ferry": 3500
+    }
+  },
+  "routes": [
+    {
+      "id": "M01",
+      "from": "Kawran Bazar",
+      "to": "Nearby shops",
+      "distanceKm": 3,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0,
+      "dailyDemandT": 3
+    },
+    {
+      "id": "M02",
+      "from": "Dhaka",
+      "to": "Neighbourhood delivery",
+      "distanceKm": 8,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.2,
+      "dailyDemandT": 8
+    },
+    {
+      "id": "R01",
+      "from": "Dhaka (Tejgaon)",
+      "to": "Dhaka city",
+      "distanceKm": 15,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.3,
+      "dailyDemandT": 60
+    },
+    {
+      "id": "R02",
+      "from": "Dhaka",
+      "to": "Narayanganj",
+      "distanceKm": 20,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.3,
+      "dailyDemandT": 50
+    },
+    {
+      "id": "R03",
+      "from": "Dhaka",
+      "to": "Gazipur",
+      "distanceKm": 35,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 80
+    },
+    {
+      "id": "R04",
+      "from": "Dhaka",
+      "to": "Cumilla",
+      "distanceKm": 100,
+      "haulType": "line",
+      "crossing": "Meghna+Gumti",
+      "weighbridges": 1,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 120
+    },
+    {
+      "id": "R05",
+      "from": "Dhaka",
+      "to": "Chattogram Port",
+      "distanceKm": 250,
+      "haulType": "line",
+      "crossing": "Meghna+Gumti",
+      "weighbridges": 2,
+      "extraDelayGameH": 1,
+      "dailyDemandT": 400
+    },
+    {
+      "id": "R06",
+      "from": "Gazipur",
+      "to": "Chattogram Port",
+      "distanceKm": 280,
+      "haulType": "line",
+      "crossing": "Meghna+Gumti",
+      "weighbridges": 2,
+      "extraDelayGameH": 1.5,
+      "dailyDemandT": 300
+    },
+    {
+      "id": "R07",
+      "from": "Dhaka",
+      "to": "Sylhet",
+      "distanceKm": 240,
+      "haulType": "line",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 100
+    },
+    {
+      "id": "R08",
+      "from": "Dhaka",
+      "to": "Bogura",
+      "distanceKm": 200,
+      "haulType": "line",
+      "crossing": "Jamuna Bridge",
+      "weighbridges": 1,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 150
+    },
+    {
+      "id": "R09",
+      "from": "Dhaka",
+      "to": "Rangpur",
+      "distanceKm": 300,
+      "haulType": "line",
+      "crossing": "Jamuna Bridge",
+      "weighbridges": 1,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 100
+    },
+    {
+      "id": "R10",
+      "from": "Dhaka",
+      "to": "Khulna (via Padma)",
+      "distanceKm": 220,
+      "haulType": "line",
+      "crossing": "Padma Bridge",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 120
+    },
+    {
+      "id": "R11",
+      "from": "Dhaka",
+      "to": "Khulna (via Paturia ferry)",
+      "distanceKm": 270,
+      "haulType": "line",
+      "crossing": "Paturia Ferry",
+      "weighbridges": 0,
+      "extraDelayGameH": 6,
+      "dailyDemandT": 120
+    },
+    {
+      "id": "R12",
+      "from": "Dhaka",
+      "to": "Benapole",
+      "distanceKm": 200,
+      "haulType": "line",
+      "crossing": "Padma Bridge",
+      "weighbridges": 0,
+      "extraDelayGameH": 2,
+      "dailyDemandT": 150
+    },
+    {
+      "id": "R13",
+      "from": "Chattogram Port",
+      "to": "Cumilla",
+      "distanceKm": 150,
+      "haulType": "line",
+      "crossing": "None",
+      "weighbridges": 1,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 100
+    },
+    {
+      "id": "R14",
+      "from": "Narayanganj",
+      "to": "Dhaka sites (sand)",
+      "distanceKm": 25,
+      "haulType": "local",
+      "crossing": "None",
+      "weighbridges": 0,
+      "extraDelayGameH": 0.5,
+      "dailyDemandT": 200
+    }
+  ]
+}
