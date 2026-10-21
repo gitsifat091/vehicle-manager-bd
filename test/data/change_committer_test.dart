@@ -296,6 +296,25 @@ void main() {
     expect(db.company.load()!.cash, startCash);
   });
 
+  test('committing a change keeps the permits the company owns', () async {
+    final db = await folder.open();
+    await db.company.save(
+      Company(
+        name: 'Test Ltd',
+        cash: startCash,
+        createdAt: t0,
+        permits: {'light', 'hazmat'},
+      ),
+    );
+    await ChangeCommitter(db).commit(
+      ChangeSet(cashAfter: startCash + 500, completedTripsAfter: 2),
+    );
+    final company = db.company.load()!;
+    expect(company.cash, startCash + 500);
+    expect(company.completedTrips, 2);
+    expect(company.permits, {'light', 'hazmat'});
+  });
+
   test('a change set round-trips through the pending record on disk', () async {
     var db = await folder.open();
     await seedCompany(db);

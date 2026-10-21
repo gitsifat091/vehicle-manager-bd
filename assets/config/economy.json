@@ -28,30 +28,30 @@
     "startingGarageSlots": 6,
     "resaleShareOfPrice": 0.6
   },
-  "licenses": [
+  "permits": [
     {
       "id": "light",
-      "name": "Light license",
+      "name": "Light operating permit",
       "priceTk": 400000
     },
     {
       "id": "medium",
-      "name": "Medium license",
+      "name": "Medium operating permit",
       "priceTk": 500000
     },
     {
-      "id": "cold_chain",
-      "name": "Cold chain license",
+      "id": "coldchain",
+      "name": "Cold chain operating permit",
       "priceTk": 700000
     },
     {
       "id": "hazmat",
-      "name": "Hazmat license",
+      "name": "Hazmat operating permit",
       "priceTk": 800000
     },
     {
       "id": "heavy",
-      "name": "Heavy license",
+      "name": "Heavy operating permit",
       "priceTk": 1000000
     }
   ],
@@ -72,7 +72,7 @@
       "smallLoadPremium": 2.5,
       "tollClass": "Not on highway",
       "highwayAllowed": false,
-      "unlockLicense": null,
+      "unlockPermit": null,
       "unlockDeliveries": 0,
       "allowedRoutes": ["M01", "M02"]
     },
@@ -92,7 +92,7 @@
       "smallLoadPremium": 2.7,
       "tollClass": "Not on highway",
       "highwayAllowed": false,
-      "unlockLicense": null,
+      "unlockPermit": null,
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -112,7 +112,7 @@
       "smallLoadPremium": 3,
       "tollClass": "Light",
       "highwayAllowed": true,
-      "unlockLicense": null,
+      "unlockPermit": null,
       "unlockDeliveries": 5,
       "allowedRoutes": []
     },
@@ -132,7 +132,7 @@
       "smallLoadPremium": 2.8,
       "tollClass": "Light",
       "highwayAllowed": true,
-      "unlockLicense": null,
+      "unlockPermit": null,
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -152,7 +152,7 @@
       "smallLoadPremium": 1.6,
       "tollClass": "Small truck",
       "highwayAllowed": true,
-      "unlockLicense": "light",
+      "unlockPermit": "light",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -172,7 +172,7 @@
       "smallLoadPremium": 1,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlockLicense": "medium",
+      "unlockPermit": "medium",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -192,7 +192,7 @@
       "smallLoadPremium": 1.05,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlockLicense": "medium",
+      "unlockPermit": "medium",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -212,7 +212,7 @@
       "smallLoadPremium": 1,
       "tollClass": "Medium truck",
       "highwayAllowed": true,
-      "unlockLicense": "cold_chain",
+      "unlockPermit": "coldchain",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -232,7 +232,7 @@
       "smallLoadPremium": 1.2,
       "tollClass": "Big truck",
       "highwayAllowed": true,
-      "unlockLicense": "heavy",
+      "unlockPermit": "heavy",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -252,7 +252,7 @@
       "smallLoadPremium": 1,
       "tollClass": "Big truck",
       "highwayAllowed": true,
-      "unlockLicense": "hazmat",
+      "unlockPermit": "hazmat",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -272,7 +272,7 @@
       "smallLoadPremium": 0.6,
       "tollClass": "Trailer",
       "highwayAllowed": true,
-      "unlockLicense": "heavy",
+      "unlockPermit": "heavy",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     },
@@ -292,7 +292,7 @@
       "smallLoadPremium": 0.6,
       "tollClass": "Trailer+1 axle",
       "highwayAllowed": true,
-      "unlockLicense": "heavy",
+      "unlockPermit": "heavy",
       "unlockDeliveries": 0,
       "allowedRoutes": []
     }

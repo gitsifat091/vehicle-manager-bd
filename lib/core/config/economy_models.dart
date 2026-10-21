@@ -88,7 +88,7 @@ class VehicleSpec {
     required this.smallLoadPremium,
     required this.tollClass,
     required this.highwayAllowed,
-    this.unlockLicenseId,
+    this.unlockPermitId,
     this.unlockDeliveries = 0,
     this.allowedRoutes = const [],
   });
@@ -111,16 +111,16 @@ class VehicleSpec {
   final String tollClass;
   final bool highwayAllowed;
 
-  /// The license the player must own to buy this vehicle, or null when none is
-  /// needed. A vehicle has either a license or a delivery count, not both.
-  final String? unlockLicenseId;
+  /// The permit the player must own to buy this vehicle, or null when none is
+  /// needed. A vehicle has either a permit or a delivery count, not both.
+  final String? unlockPermitId;
 
   /// Settled trips the company must have before it can buy this vehicle.
   /// 0 means no delivery requirement.
   final int unlockDeliveries;
 
   /// True when the vehicle can be bought from the start of the game.
-  bool get availableAtStart => unlockLicenseId == null && unlockDeliveries == 0;
+  bool get availableAtStart => unlockPermitId == null && unlockDeliveries == 0;
 
   /// Route ids this vehicle is limited to. Empty means any route.
   final List<String> allowedRoutes;
@@ -131,8 +131,8 @@ class VehicleSpec {
 }
 
 /// A one-time Taka purchase that unlocks vehicle tiers.
-class LicenseSpec {
-  const LicenseSpec({
+class PermitSpec {
+  const PermitSpec({
     required this.id,
     required this.name,
     required this.priceTk,

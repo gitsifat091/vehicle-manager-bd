@@ -16,12 +16,12 @@ class EconomyConfig {
     required this.currency,
     required this.settings,
     required List<VehicleSpec> vehicles,
-    required List<LicenseSpec> licenses,
+    required List<PermitSpec> permits,
     required List<CargoSpec> cargo,
     required Map<String, Map<String, double>> tolls,
     required List<RouteSpec> routes,
   }) : vehicles = List.unmodifiable(vehicles),
-       licenses = List.unmodifiable(licenses),
+       permits = List.unmodifiable(permits),
        cargo = List.unmodifiable(cargo),
        tolls = Map<String, Map<String, double>>.unmodifiable({
          for (final e in tolls.entries)
@@ -33,7 +33,7 @@ class EconomyConfig {
   final String currency;
   final EconomySettings settings;
   final List<VehicleSpec> vehicles;
-  final List<LicenseSpec> licenses;
+  final List<PermitSpec> permits;
   final List<CargoSpec> cargo;
 
   /// tolls[tollClass][crossing] in Taka for a one-way pass.
@@ -59,7 +59,7 @@ class EconomyConfig {
         .list('vehicles')
         .map((r) => _parseVehicle(r))
         .toList();
-    final licenses = root.list('licenses').map((r) => _parseLicense(r)).toList();
+    final permits = root.list('permits').map((r) => _parsePermit(r)).toList();
     final cargo = root.list('cargo').map((r) => _parseCargo(r)).toList();
     final routes = root.list('routes').map((r) => _parseRoute(r)).toList();
     final tolls = _parseTolls(root.object('tolls'));
@@ -69,7 +69,7 @@ class EconomyConfig {
       currency: root.string('currency'),
       settings: settings,
       vehicles: vehicles,
-      licenses: licenses,
+      permits: permits,
       cargo: cargo,
       tolls: tolls,
       routes: routes,
@@ -92,11 +92,11 @@ class EconomyConfig {
     throw ArgumentError.value(id, 'id', 'No route with this id');
   }
 
-  LicenseSpec licenseById(String id) {
-    for (final l in licenses) {
+  PermitSpec permitById(String id) {
+    for (final l in permits) {
       if (l.id == id) return l;
     }
-    throw ArgumentError.value(id, 'id', 'No license with this id');
+    throw ArgumentError.value(id, 'id', 'No permit with this id');
   }
 
   CargoSpec cargoByName(String name) {
@@ -173,41 +173,41 @@ class EconomyConfig {
         'got ${settings.resaleShareOfPrice}',
       );
     }
-    final licenseIds = <String>{};
-    for (final l in licenses) {
-      if (!licenseIds.add(l.id)) {
-        throw ConfigException('licenses: duplicate id "${l.id}"');
+    final permitIds = <String>{};
+    for (final l in permits) {
+      if (!permitIds.add(l.id)) {
+        throw ConfigException('permits: duplicate id "${l.id}"');
       }
       if (l.priceTk <= 0) {
-        throw ConfigException('licenses: "${l.id}" priceTk must be above 0');
+        throw ConfigException('permits: "${l.id}" priceTk must be above 0');
       }
     }
-    final usedLicenses = <String>{};
+    final usedPermits = <String>{};
     for (final v in vehicles) {
-      final licenseId = v.unlockLicenseId;
+      final permitId = v.unlockPermitId;
       if (v.unlockDeliveries < 0) {
         throw ConfigException(
           'vehicles: tier ${v.tier} unlockDeliveries cannot be negative',
         );
       }
-      if (licenseId != null) {
-        if (!licenseIds.contains(licenseId)) {
+      if (permitId != null) {
+        if (!permitIds.contains(permitId)) {
           throw ConfigException(
-            'vehicles: tier ${v.tier} unlockLicense "$licenseId" '
-            'is not a license id',
+            'vehicles: tier ${v.tier} unlockPermit "$permitId" '
+            'is not a permit id',
           );
         }
         if (v.unlockDeliveries > 0) {
           throw ConfigException(
-            'vehicles: tier ${v.tier} has both a license and a delivery '
+            'vehicles: tier ${v.tier} has both a permit and a delivery '
             'count; use one',
           );
         }
-        usedLicenses.add(licenseId);
+        usedPermits.add(permitId);
       }
     }
-    for (final id in licenseIds.difference(usedLicenses)) {
-      throw ConfigException('licenses: "$id" does not unlock any vehicle');
+    for (final id in permitIds.difference(usedPermits)) {
+      throw ConfigException('permits: "$id" does not unlock any vehicle');
     }
     for (final v in vehicles) {
       for (final id in v.allowedRoutes) {
@@ -275,12 +275,12 @@ VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(
   smallLoadPremium: r.number('smallLoadPremium'),
   tollClass: r.string('tollClass'),
   highwayAllowed: r.boolean('highwayAllowed'),
-  unlockLicenseId: r.optionalString('unlockLicense'),
+  unlockPermitId: r.optionalString('unlockPermit'),
   unlockDeliveries: r.integer('unlockDeliveries'),
   allowedRoutes: List.unmodifiable(r.stringList('allowedRoutes')),
 );
 
-LicenseSpec _parseLicense(_Reader r) => LicenseSpec(
+PermitSpec _parsePermit(_Reader r) => PermitSpec(
   id: r.string('id'),
   name: r.string('name'),
   priceTk: r.integer('priceTk'),

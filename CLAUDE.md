@@ -149,7 +149,7 @@ Out (later): multiplayer, auctions, long-haul contracts, bus mode, waterways, ad
 - Line hauls are limited by `settings.maxLineHaulKm` in economy.json (400 in v0.2). Never hardcode the limit in Dart
 - Cargo compatibility comes from `cargo.allowedTiers` in economy.json. A vehicle can only be assigned a cargo that lists its tier
 - A vehicle with a non-empty `vehicles[].allowedRoutes` can only run those routes (tier 1 runs M01 and M02). Empty means any route
-- A vehicle is unlocked by `vehicles[].unlockLicense` (an id from the `licenses` table) or by `unlockDeliveries` (settled trips), never both. Licenses are one-time Taka purchases, never a premium currency. Use `checkVehicleUnlocked` and `checkLicensePurchase`
+- A vehicle is unlocked by `vehicles[].unlockPermit` (an id from the `permits` table) or by `unlockDeliveries` (settled trips), never both. Permits are one-time Taka purchases, never a premium currency. Use `checkVehicleUnlocked` and `checkPermitPurchase`
 - Selling pays `settings.resaleShareOfPrice` of the price (`resaleValueTk`). A vehicle on the road cannot be sold
 - The garage holds `settings.startingGarageSlots` vehicles (6, counting the free starter). A purchase with no free slot is rejected through `checkGarageSlot`. Never hardcode the number
 

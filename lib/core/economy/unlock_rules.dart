@@ -4,18 +4,18 @@ enum UnlockRejectionReason {
   /// The company has not settled enough trips yet (tier 3: 5 deliveries).
   needsDeliveries,
 
-  /// The vehicle needs a license the player does not own.
-  needsLicense,
+  /// The vehicle needs a permit the player does not own.
+  needsPermit,
 }
 
 /// Why a vehicle cannot be bought yet. [message] is for logs and tests; the UI
-/// maps [reason] to an ARB string and uses [deliveriesNeeded] or [licenseId].
+/// maps [reason] to an ARB string and uses [deliveriesNeeded] or [permitId].
 class UnlockRejection {
   const UnlockRejection(
     this.reason,
     this.message, {
     this.deliveriesNeeded,
-    this.licenseId,
+    this.permitId,
   });
 
   final UnlockRejectionReason reason;
@@ -24,8 +24,8 @@ class UnlockRejection {
   /// Set for [UnlockRejectionReason.needsDeliveries].
   final int? deliveriesNeeded;
 
-  /// Set for [UnlockRejectionReason.needsLicense].
-  final String? licenseId;
+  /// Set for [UnlockRejectionReason.needsPermit].
+  final String? permitId;
 
   @override
   String toString() => 'UnlockRejection(${reason.name}): $message';
@@ -33,20 +33,20 @@ class UnlockRejection {
 
 /// Returns why [vehicle] cannot be bought yet, or null when it is unlocked.
 ///
-/// [completedTrips] is `Company.completedTrips`. [ownedLicenses] holds the ids
-/// of the licenses the player has bought. A vehicle needs either a license or
+/// [completedTrips] is `Company.completedTrips`. [ownedPermits] holds the ids
+/// of the permits the player has bought. A vehicle needs either a permit or
 /// a delivery count, never both (the config checks that).
 UnlockRejection? checkVehicleUnlocked({
   required VehicleSpec vehicle,
   required int completedTrips,
-  required Set<String> ownedLicenses,
+  required Set<String> ownedPermits,
 }) {
-  final licenseId = vehicle.unlockLicenseId;
-  if (licenseId != null && !ownedLicenses.contains(licenseId)) {
+  final permitId = vehicle.unlockPermitId;
+  if (permitId != null && !ownedPermits.contains(permitId)) {
     return UnlockRejection(
-      UnlockRejectionReason.needsLicense,
-      '${vehicle.name} (tier ${vehicle.tier}) needs the "$licenseId" license.',
-      licenseId: licenseId,
+      UnlockRejectionReason.needsPermit,
+      '${vehicle.name} (tier ${vehicle.tier}) needs the "$permitId" permit.',
+      permitId: permitId,
     );
   }
   if (completedTrips < vehicle.unlockDeliveries) {
@@ -60,44 +60,44 @@ UnlockRejection? checkVehicleUnlocked({
   return null;
 }
 
-/// The vehicles that need [licenseId], in tier order.
-List<VehicleSpec> vehiclesUnlockedBy(EconomyConfig config, String licenseId) {
+/// The vehicles that need [permitId], in tier order.
+List<VehicleSpec> vehiclesUnlockedBy(EconomyConfig config, String permitId) {
   return [
     for (final v in config.vehicles)
-      if (v.unlockLicenseId == licenseId) v,
+      if (v.unlockPermitId == permitId) v,
   ];
 }
 
-enum LicenseRejectionReason { alreadyOwned, notEnoughCash }
+enum PermitRejectionReason { alreadyOwned, notEnoughCash }
 
-/// Why a license cannot be bought. [message] is for logs and tests.
-class LicenseRejection {
-  const LicenseRejection(this.reason, this.message);
+/// Why a permit cannot be bought. [message] is for logs and tests.
+class PermitRejection {
+  const PermitRejection(this.reason, this.message);
 
-  final LicenseRejectionReason reason;
+  final PermitRejectionReason reason;
   final String message;
 
   @override
-  String toString() => 'LicenseRejection(${reason.name}): $message';
+  String toString() => 'PermitRejection(${reason.name}): $message';
 }
 
-/// Returns why [license] cannot be bought now, or null when it can. A license
+/// Returns why [permit] cannot be bought now, or null when it can. A permit
 /// is a one-time purchase in Taka: the price is paid once and never again.
-LicenseRejection? checkLicensePurchase({
-  required LicenseSpec license,
+PermitRejection? checkPermitPurchase({
+  required PermitSpec permit,
   required int cash,
-  required Set<String> ownedLicenses,
+  required Set<String> ownedPermits,
 }) {
-  if (ownedLicenses.contains(license.id)) {
-    return LicenseRejection(
-      LicenseRejectionReason.alreadyOwned,
-      'The "${license.id}" license is already owned.',
+  if (ownedPermits.contains(permit.id)) {
+    return PermitRejection(
+      PermitRejectionReason.alreadyOwned,
+      'The "${permit.id}" permit is already owned.',
     );
   }
-  if (cash < license.priceTk) {
-    return LicenseRejection(
-      LicenseRejectionReason.notEnoughCash,
-      'The "${license.id}" license costs Tk ${license.priceTk}, '
+  if (cash < permit.priceTk) {
+    return PermitRejection(
+      PermitRejectionReason.notEnoughCash,
+      'The "${permit.id}" permit costs Tk ${permit.priceTk}, '
       'cash is Tk $cash.',
     );
   }

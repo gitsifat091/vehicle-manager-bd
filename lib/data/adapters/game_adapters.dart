@@ -36,6 +36,7 @@ class CompanyAdapter extends TypeAdapter<Company> {
       createdAt: decodeInstant(f[2]),
       completedTrips: (f[3] as int?) ?? 0,
       turboElapsed: Duration(milliseconds: (f[4] as int?) ?? 0),
+      permits: {...?(f[5] as List?)?.cast<String>()},
     );
   }
 
@@ -47,6 +48,8 @@ class CompanyAdapter extends TypeAdapter<Company> {
       2: encodeInstant(obj.createdAt),
       3: obj.completedTrips,
       4: obj.turboElapsed.inMilliseconds,
+      // Sorted so the same permits always write the same bytes.
+      if (obj.permits.isNotEmpty) 5: obj.permits.toList()..sort(),
     });
   }
 }

@@ -25,6 +25,26 @@ class _OldVehicleAdapter extends TypeAdapter<Vehicle> {
   }
 }
 
+/// An older build of the company adapter, from before permits: fields 0 to 4.
+class _OldCompanyAdapter extends TypeAdapter<Company> {
+  @override
+  final int typeId = HiveTypeIds.company;
+
+  @override
+  Company read(BinaryReader reader) => throw UnimplementedError();
+
+  @override
+  void write(BinaryWriter writer, Company obj) {
+    writeFields(writer, {
+      0: obj.name,
+      1: obj.cash,
+      2: encodeInstant(obj.createdAt),
+      3: obj.completedTrips,
+      4: obj.turboElapsed.inMilliseconds,
+    });
+  }
+}
+
 /// An older build of the route state adapter, from before game days were
 /// stored: fields 0 to 2 only.
 class _OldRouteStateAdapter extends TypeAdapter<RouteState> {
@@ -70,6 +90,7 @@ void main() {
       createdAt: t0,
       completedTrips: 7,
       turboElapsed: const Duration(minutes: 42, seconds: 7),
+      permits: {'medium', 'light'},
     );
     final vehicle = Vehicle(
       id: 'v1',
@@ -151,6 +172,40 @@ void main() {
       expect(loaded.availableAt, isNull);
     },
   );
+
+  test('a company saved before permits existed owns none', () async {
+    Hive.init(folder.dir.path);
+    Hive.registerAdapter(_OldCompanyAdapter(), override: true);
+    final oldBox = await Hive.openBox<Company>('company');
+    await oldBox.put(
+      'company',
+      Company(name: 'Old Ltd', cash: 777, createdAt: t0, completedTrips: 4),
+    );
+    await Hive.close();
+    Hive.registerAdapter(CompanyAdapter(), override: true);
+
+    final db = await folder.open();
+    final loaded = db.company.load()!;
+    expect(loaded.name, 'Old Ltd');
+    expect(loaded.cash, 777);
+    expect(loaded.completedTrips, 4);
+    expect(loaded.permits, isEmpty);
+  });
+
+  test('permits survive a close and reopen, in any order', () async {
+    var db = await folder.open();
+    await db.company.save(
+      Company(
+        name: 'A',
+        cash: 1,
+        createdAt: t0,
+        permits: {'hazmat', 'coldchain', 'heavy'},
+      ),
+    );
+    await db.close();
+    db = await folder.open();
+    expect(db.company.load()!.permits, {'coldchain', 'hazmat', 'heavy'});
+  });
 
   test('a route state saved before game days existed has no day', () async {
     Hive.init(folder.dir.path);

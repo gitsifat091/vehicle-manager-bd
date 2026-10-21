@@ -16,14 +16,14 @@
 //   selling), it buys a useful vehicle and sends it out at once. Policies A to
 //   C pick the cheapest one; policy D picks the affordable one with the
 //   highest profit per real hour. Vehicle unlocks apply (tier 3 needs 5
-//   settled trips) but the bots buy no licenses, so tiers 5 and up stay shut.
+//   settled trips) but the bots buy no permits, so tiers 5 and up stay shut.
 //   Useful means: it can run a route that starts in Dhaka (no
 //   terminal needed yet), it earns a profit, and the route still has demand
 //   left for it. "Demand left" means the route's daily demand minus what the
 //   fleet already uses per game day, so the new vehicle would not starve.
 // - Line hauls are sent out again as soon as they arrive. Local hauls repeat
 //   by themselves.
-// - Vehicle unlocks (licenses, deliveries) are not modelled.
+// - Vehicle unlocks (permits, deliveries) are not modelled.
 
 // ignore_for_file: avoid_print
 import 'dart:convert';
@@ -55,7 +55,14 @@ class Policy {
     required this.includeLine,
     this.cheapestFirst = true,
     this.sells = false,
+    this.buysPermits = false,
   });
+
+  /// True: the bot also buys an operating permit when that unlocks a vehicle
+  /// with a better profit per real hour than its worst vehicle, and it can
+  /// afford the permit plus that vehicle (net of the worst one's resale value
+  /// when the garage is full).
+  final bool buysPermits;
 
   /// True: when the garage is full and a better vehicle (higher profit per
   /// real hour) becomes affordable after selling the worst one, the worst one
@@ -138,8 +145,37 @@ void main(List<String> args) {
       cheapestFirst: false,
       sells: true,
     ),
+    Policy(
+      'F',
+      'POLICY F: like E, and it also buys an operating permit when that '
+      'unlocks a vehicle with better profit per hour than its worst one',
+      minTier: 1,
+      includeLine: false,
+      cheapestFirst: false,
+      sells: true,
+      buysPermits: true,
+    ),
+    Policy(
+      'G',
+      'POLICY G: like E, but Line hauls count too (an attentive player sends '
+      'every Line haul out again at once)',
+      minTier: 1,
+      includeLine: true,
+      cheapestFirst: false,
+      sells: true,
+    ),
+    Policy(
+      'H',
+      'POLICY H: like F, but Line hauls count too (an attentive player sends '
+      'every Line haul out again at once)',
+      minTier: 1,
+      includeLine: true,
+      cheapestFirst: false,
+      sells: true,
+      buysPermits: true,
+    ),
   ];
-  final only = args.length > 2 ? args[2].toUpperCase() : 'ABCDE';
+  final only = args.length > 2 ? args[2].toUpperCase() : 'ABCDEFGH';
 
   final results = <String, List<RunResult>>{};
   for (final policy in policies.where((p) => only.contains(p.id))) {
@@ -163,8 +199,25 @@ void main(List<String> args) {
     runs.first.printDetail();
 
     print('');
+    printHourly(runs, hours);
+
+    print('');
     print('Over $seeds seeds (min / median / max)');
     results[policy.id] = runs;
+    summary(
+      'Longest stretch with nothing to buy, even with unlimited cash',
+      runs.map((r) => r.longestNothingToBuyMin),
+      unit: 'min',
+    );
+    summary(
+      'Longest stretch without a purchase, permit or sale',
+      runs.map((r) => r.longestNoActionMin),
+      unit: 'min',
+    );
+    summary(
+      'Permits bought',
+      runs.map((r) => r.permitPurchases.length),
+    );
     summary('Purchases in hour 1', runs.map((r) => r.purchasesBefore(60)));
     summary(
       'Minute the garage cap is reached',
@@ -246,6 +299,25 @@ void main(List<String> args) {
     print(row('Net worth, vehicles at price (Tk)', (r) => r.netWorth));
     print(row('Net worth, vehicles at resale (Tk)', (r) => r.netWorthAtResale));
     print(row('Vehicles sold', (r) => r.sales.length));
+  }
+}
+
+/// One row per hour, medians over the seeds.
+void printHourly(List<RunResult> runs, int hours) {
+  num median(Iterable<num> v) => (v.toList()..sort())[v.length ~/ 2];
+  print('Per hour, medians over ${runs.length} seeds');
+  print('  Hour   Income (Tk)   Cash at end (Tk)   Vehicles bought   '
+      'Permits bought   Vehicles sold');
+  for (var h = 0; h < hours; h++) {
+    String cell(num v, int width) => money(v.round()).padLeft(width);
+    print(
+      '  ${(h + 1).toString().padLeft(4)}'
+      '${cell(median(runs.map((r) => r.incomeInHour(h + 1))), 14)}'
+      '${cell(median(runs.map((r) => r.cashAtHourEnd[h])), 19)}'
+      '${cell(median(runs.map((r) => r.vehiclesBoughtInHour(h))), 18)}'
+      '${cell(median(runs.map((r) => r.permitsBoughtInHour(h))), 17)}'
+      '${cell(median(runs.map((r) => r.soldInHour(h))), 16)}',
+    );
   }
 }
 
@@ -357,12 +429,43 @@ class Sale {
   final int price;
 }
 
+class PermitPurchase {
+  PermitPurchase(this.minute, this.id, this.price);
+
+  final double minute;
+  final String id;
+  final int price;
+}
+
 class RunResult {
   RunResult({required this.hours});
 
   final int hours;
   final purchases = <Purchase>[];
   final sales = <Sale>[];
+  final permitPurchases = <PermitPurchase>[];
+
+  /// Cash at the end of each hour, in order.
+  final cashAtHourEnd = <int>[];
+
+  /// Longest run of time in which the bot had no purchase, permit or sale.
+  double longestNoActionMin = 0;
+
+  /// Longest run of time in which nothing was left for the bot to buy even
+  /// with unlimited cash: no free slot and no better vehicle to swap to, or
+  /// no useful vehicle left.
+  double longestNothingToBuyMin = 0;
+
+  int _hourOf(double minute) => min(minute ~/ 60, hours - 1);
+
+  int vehiclesBoughtInHour(int hour) =>
+      purchases.where((p) => _hourOf(p.minute) == hour).length;
+
+  int permitsBoughtInHour(int hour) =>
+      permitPurchases.where((p) => _hourOf(p.minute) == hour).length;
+
+  int soldInHour(int hour) =>
+      sales.where((s) => _hourOf(s.minute) == hour).length;
 
   /// Tier of every vehicle still owned at the end, the starter included.
   final fleetTiers = <int>[];
@@ -559,8 +662,72 @@ RunResult simulate({
     }
   }
 
+  bool garageFull() =>
+      checkGarageSlot(
+        settings: config.settings,
+        vehiclesOwned: vehicles.length,
+      ) !=
+      null;
+
+  /// Whether the unlock rules let the bot buy [c]'s vehicle now.
+  bool unlocked(Candidate c) =>
+      checkVehicleUnlocked(
+        vehicle: c.vehicle,
+        completedTrips: company.completedTrips,
+        ownedPermits: company.permits,
+      ) ==
+      null;
+
+  /// Whether [c]'s route has demand left for it. [freeing] is a vehicle about
+  /// to leave, whose share of its route's demand becomes free.
+  bool hasSpare(Candidate c, {Candidate? freeing}) {
+    final used =
+        (committed[c.route.id] ?? 0) -
+        (freeing != null && freeing.route.id == c.route.id
+            ? freeing.tonsPerGameDay
+            : 0);
+    return c.route.dailyDemandT - used >= c.tonsPerGameDay;
+  }
+
+  /// The vehicle with the lowest profit per real hour, or null for none.
+  String? worstVehicleId() {
+    String? worstId;
+    for (final id in vehicles.keys) {
+      final c = doing[id]!;
+      if (worstId == null ||
+          c.profitPerRealHour < doing[worstId]!.profitPerRealHour) {
+        worstId = id;
+      }
+    }
+    return worstId;
+  }
+
+  /// Whether the bot has anything it could buy if cash were no limit: a free
+  /// slot and a useful vehicle, or (when it sells) a better vehicle than its
+  /// worst one, and (when it buys permits) also a vehicle behind a permit.
+  bool somethingToBuy() {
+    final free = !garageFull();
+    final worstId = free ? null : worstVehicleId();
+    final worst = worstId == null ? null : doing[worstId]!;
+    if (!free && (!policy.sells || worst == null)) return false;
+    for (final c in candidates) {
+      final open = unlocked(c) ||
+          (policy.buysPermits &&
+              c.vehicle.unlockPermitId != null &&
+              !company.permits.contains(c.vehicle.unlockPermitId));
+      if (!open) continue;
+      if (!free && c.profitPerRealHour <= worst!.profitPerRealHour) continue;
+      if (hasSpare(c, freeing: free ? null : worst)) return true;
+    }
+    return false;
+  }
+
+  var lastActionMinute = 0.0;
+  double? nothingToBuySince;
+  var nextHourMark = 1;
   var elapsed = Duration.zero;
   while (elapsed <= horizon) {
+    var acted = false;
     final now = start.add(elapsed);
     final speed = schedule.speedAt(elapsed);
     final bonus = schedule.bonusAt(elapsed);
@@ -608,6 +775,58 @@ RunResult simulate({
       result.sales.add(Sale(minute, vehicle.tier, price));
       doing.remove(id);
       retiring.remove(id);
+      acted = true;
+    }
+
+    // Policy F: buy an operating permit when it unlocks a vehicle that earns
+    // more per hour than the worst one, and the permit plus that vehicle are
+    // affordable (counting the worst one's resale value when the garage is
+    // full). The vehicle itself is bought by the normal steps below.
+    if (policy.buysPermits && retiring.isEmpty) {
+      final worstId = worstVehicleId();
+      if (worstId != null) {
+        final worst = doing[worstId]!;
+        final full = garageFull();
+        final resale = full
+            ? resaleValueTk(settings: config.settings, vehicle: worst.vehicle)
+            : 0;
+        final unowned = config.permits
+            .where((p) => !company.permits.contains(p.id))
+            .toList()
+          ..sort((a, b) => a.priceTk.compareTo(b.priceTk));
+        for (final permit in unowned) {
+          Candidate? target;
+          for (final c in candidates) {
+            if (c.vehicle.unlockPermitId != permit.id) continue;
+            if (c.profitPerRealHour <= worst.profitPerRealHour) continue;
+            if (!hasSpare(c, freeing: full ? worst : null)) continue;
+            if (target == null ||
+                c.profitPerRealHour > target.profitPerRealHour) {
+              target = c;
+            }
+          }
+          if (target == null) continue;
+          final need = permit.priceTk + target.vehicle.priceTk - resale;
+          if (company.cash < need) continue;
+          if (checkPermitPurchase(
+                permit: permit,
+                cash: company.cash,
+                ownedPermits: company.permits,
+              ) !=
+              null) {
+            continue;
+          }
+          company = company.copyWith(
+            cash: company.cash - permit.priceTk,
+            permits: {...company.permits, permit.id},
+          );
+          result.permitPurchases.add(
+            PermitPurchase(minute, permit.id, permit.priceTk),
+          );
+          acted = true;
+          break;
+        }
+      }
     }
 
     // Buy the next vehicle by the policy's order, again and again while cash
@@ -615,26 +834,14 @@ RunResult simulate({
     var bought = true;
     while (bought) {
       bought = false;
-      final noSlot = checkGarageSlot(
-        settings: config.settings,
-        vehiclesOwned: vehicles.length,
-      );
-      if (noSlot != null) break;
+      if (garageFull()) break;
       for (final c in candidates) {
         if (c.vehicle.priceTk > company.cash) continue;
-        // The bots never buy a license, so only tiers 1 to 4 are open to
-        // them, and tier 3 only after 5 settled trips.
-        if (checkVehicleUnlocked(
-              vehicle: c.vehicle,
-              completedTrips: company.completedTrips,
-              ownedLicenses: const {},
-            ) !=
-            null) {
-          continue;
-        }
-        final spare =
-            c.route.dailyDemandT - (committed[c.route.id] ?? 0);
-        if (spare < c.tonsPerGameDay) continue;
+        // Unlock rules apply: tier 3 after 5 settled trips, tiers 5 and up
+        // only with the matching permit (only policy F buys permits).
+        if (!unlocked(c)) continue;
+        if (!hasSpare(c)) continue;
+        acted = true;
         final id = 'v${nextVehicleNumber++}';
         doing[id] = c;
         company = company.copyWith(cash: company.cash - c.vehicle.priceTk);
@@ -674,21 +881,8 @@ RunResult simulate({
 
     // Policy E: with a full garage, retire the worst vehicle when a better one
     // is affordable after selling it. One sale at a time.
-    if (policy.sells &&
-        retiring.isEmpty &&
-        checkGarageSlot(
-              settings: config.settings,
-              vehiclesOwned: vehicles.length,
-            ) !=
-            null) {
-      String? worstId;
-      for (final id in vehicles.keys) {
-        final c = doing[id]!;
-        if (worstId == null ||
-            c.profitPerRealHour < doing[worstId]!.profitPerRealHour) {
-          worstId = id;
-        }
-      }
+    if (policy.sells && retiring.isEmpty && garageFull()) {
+      final worstId = worstVehicleId();
       if (worstId != null) {
         final worst = doing[worstId]!;
         final cashAfterSale =
@@ -697,10 +891,8 @@ RunResult simulate({
         final better = candidates.any((c) {
           if (c.profitPerRealHour <= worst.profitPerRealHour) return false;
           if (c.vehicle.priceTk > cashAfterSale) return false;
-          final used =
-              (committed[c.route.id] ?? 0) -
-              (c.route.id == worst.route.id ? worst.tonsPerGameDay : 0);
-          return c.route.dailyDemandT - used >= c.tonsPerGameDay;
+          if (!unlocked(c)) return false;
+          return hasSpare(c, freeing: worst);
         });
         if (better) {
           retiring.add(worstId);
@@ -741,7 +933,46 @@ RunResult simulate({
     );
     if (waiting) result.firstR01WaitMin ??= minute;
 
+    // Stretches with no action, and with nothing to buy even with unlimited
+    // cash, measured at the end of the tick.
+    if (acted) {
+      result.longestNoActionMin = max(
+        result.longestNoActionMin,
+        minute - lastActionMinute,
+      );
+      lastActionMinute = minute;
+    }
+    if (somethingToBuy()) {
+      final since = nothingToBuySince;
+      if (since != null) {
+        result.longestNothingToBuyMin = max(
+          result.longestNothingToBuyMin,
+          minute - since,
+        );
+        nothingToBuySince = null;
+      }
+    } else {
+      nothingToBuySince ??= minute;
+    }
+    while (elapsed >= Duration(hours: nextHourMark) && nextHourMark <= hours) {
+      result.cashAtHourEnd.add(company.cash);
+      nextHourMark++;
+    }
+
     elapsed += tick;
+  }
+
+  final endMinute = horizon.inMicroseconds / 6e7;
+  result.longestNoActionMin = max(
+    result.longestNoActionMin,
+    endMinute - lastActionMinute,
+  );
+  final idleSince = nothingToBuySince;
+  if (idleSince != null) {
+    result.longestNothingToBuyMin = max(
+      result.longestNothingToBuyMin,
+      endMinute - idleSince,
+    );
   }
 
   result.vehicleCount = vehicles.length;

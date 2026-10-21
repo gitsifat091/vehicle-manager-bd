@@ -126,40 +126,40 @@ void main() {
       expect(() => EconomyConfig.parse(empty), configError('is empty'));
     });
 
-    test('reads the licenses table', () {
-      expect(config.licenses.map((l) => l.id), [
+    test('reads the permits table', () {
+      expect(config.permits.map((l) => l.id), [
         'light',
         'medium',
-        'cold_chain',
+        'coldchain',
         'hazmat',
         'heavy',
       ]);
-      expect(config.licenseById('hazmat').name, 'Hazmat license');
-      expect(config.licenseById('heavy').priceTk, 1000000);
-      expect(() => config.licenseById('pilot'), throwsArgumentError);
-      expect(() => config.licenses.removeLast(), throwsUnsupportedError);
+      expect(config.permitById('hazmat').name, 'Hazmat operating permit');
+      expect(config.permitById('heavy').priceTk, 1000000);
+      expect(() => config.permitById('pilot'), throwsArgumentError);
+      expect(() => config.permits.removeLast(), throwsUnsupportedError);
     });
 
-    test('reads vehicle unlocks: a license id or a delivery count', () {
+    test('reads vehicle unlocks: a permit id or a delivery count', () {
       expect(config.vehicleByTier(3).unlockDeliveries, 5);
-      expect(config.vehicleByTier(3).unlockLicenseId, isNull);
-      expect(config.vehicleByTier(5).unlockLicenseId, 'light');
+      expect(config.vehicleByTier(3).unlockPermitId, isNull);
+      expect(config.vehicleByTier(5).unlockPermitId, 'light');
       expect(config.vehicleByTier(5).unlockDeliveries, 0);
       for (final v in config.vehicles) {
         expect(
-          v.unlockLicenseId != null && v.unlockDeliveries > 0,
+          v.unlockPermitId != null && v.unlockDeliveries > 0,
           false,
           reason: 'tier ${v.tier} has both',
         );
       }
     });
 
-    test('rejects an unlock license that is not in the table', () {
-      final text = edited((j) => j['vehicles'][4]['unlockLicense'] = 'pilot');
+    test('rejects an unlock permit that is not in the table', () {
+      final text = edited((j) => j['vehicles'][4]['unlockPermit'] = 'pilot');
       expect(() => EconomyConfig.parse(text), configError('"pilot"'));
     });
 
-    test('rejects a vehicle with both a license and a delivery count', () {
+    test('rejects a vehicle with both a permit and a delivery count', () {
       final text = edited((j) => j['vehicles'][4]['unlockDeliveries'] = 3);
       expect(() => EconomyConfig.parse(text), configError('use one'));
     });
@@ -174,10 +174,10 @@ void main() {
       expect(() => EconomyConfig.parse(negative), configError('negative'));
     });
 
-    test('rejects a license that unlocks nothing', () {
+    test('rejects a permit that unlocks nothing', () {
       final text = edited((j) {
         for (final v in j['vehicles']) {
-          if (v['unlockLicense'] == 'light') v['unlockLicense'] = null;
+          if (v['unlockPermit'] == 'light') v['unlockPermit'] = null;
         }
       });
       expect(
@@ -186,10 +186,10 @@ void main() {
       );
     });
 
-    test('rejects duplicate license ids and a zero price', () {
-      final dup = edited((j) => j['licenses'][1]['id'] = 'light');
+    test('rejects duplicate permit ids and a zero price', () {
+      final dup = edited((j) => j['permits'][1]['id'] = 'light');
       expect(() => EconomyConfig.parse(dup), configError('duplicate id'));
-      final free = edited((j) => j['licenses'][0]['priceTk'] = 0);
+      final free = edited((j) => j['permits'][0]['priceTk'] = 0);
       expect(() => EconomyConfig.parse(free), configError('priceTk must be'));
     });
 

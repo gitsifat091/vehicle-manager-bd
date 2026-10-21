@@ -11,7 +11,9 @@ class Company {
     required DateTime createdAt,
     this.completedTrips = 0,
     this.turboElapsed = Duration.zero,
-  }) : createdAt = createdAt.toUtc();
+    Set<String> permits = const {},
+  }) : createdAt = createdAt.toUtc(),
+       permits = Set.unmodifiable(permits);
 
   /// A fresh company with the config's starting cash.
   factory Company.newGame({
@@ -39,11 +41,17 @@ class Company {
   /// foreground, so time away does not use up the Turbo Start.
   final Duration turboElapsed;
 
+  /// Ids of the operating permits the company has bought (the `permits` table
+  /// in economy.json). A permit is a one-time purchase, so an id is never
+  /// removed. Empty in saves from before permits existed.
+  final Set<String> permits;
+
   Company copyWith({
     String? name,
     int? cash,
     int? completedTrips,
     Duration? turboElapsed,
+    Set<String>? permits,
   }) {
     return Company(
       name: name ?? this.name,
@@ -51,6 +59,7 @@ class Company {
       createdAt: createdAt,
       completedTrips: completedTrips ?? this.completedTrips,
       turboElapsed: turboElapsed ?? this.turboElapsed,
+      permits: permits ?? this.permits,
     );
   }
 
@@ -61,11 +70,19 @@ class Company {
       other.cash == cash &&
       other.createdAt == createdAt &&
       other.completedTrips == completedTrips &&
-      other.turboElapsed == turboElapsed;
+      other.turboElapsed == turboElapsed &&
+      other.permits.length == permits.length &&
+      other.permits.containsAll(permits);
 
   @override
-  int get hashCode =>
-      Object.hash(name, cash, createdAt, completedTrips, turboElapsed);
+  int get hashCode => Object.hash(
+    name,
+    cash,
+    createdAt,
+    completedTrips,
+    turboElapsed,
+    Object.hashAllUnordered(permits),
+  );
 
   @override
   String toString() =>

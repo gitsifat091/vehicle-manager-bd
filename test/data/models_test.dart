@@ -32,6 +32,47 @@ void main() {
         true,
       );
     });
+
+    group('permits', () {
+      test('start empty', () {
+        expect(Company(name: 'A', cash: 1, createdAt: t0).permits, isEmpty);
+      });
+
+      test('copyWith keeps them when something else changes', () {
+        final c = Company(
+          name: 'A',
+          cash: 10,
+          createdAt: t0,
+          permits: {'light'},
+        );
+        final d = c.copyWith(cash: 5, completedTrips: 3);
+        expect(d.permits, {'light'});
+      });
+
+      test('copyWith can add one', () {
+        final c = Company(name: 'A', cash: 10, createdAt: t0);
+        final d = c.copyWith(permits: {...c.permits, 'heavy'});
+        expect(d.permits, {'heavy'});
+        expect(c.permits, isEmpty);
+      });
+
+      test('cannot be changed in place or through the set that was passed', () {
+        final source = {'light'};
+        final c = Company(name: 'A', cash: 1, createdAt: t0, permits: source);
+        source.add('hazmat');
+        expect(c.permits, {'light'});
+        expect(() => c.permits.add('heavy'), throwsUnsupportedError);
+      });
+
+      test('count in equality, whatever the order', () {
+        Company make(Set<String> p) =>
+            Company(name: 'A', cash: 1, createdAt: t0, permits: p);
+        expect(make({'light', 'heavy'}), make({'heavy', 'light'}));
+        expect(make({'light', 'heavy'}).hashCode, make({'heavy', 'light'}).hashCode);
+        expect(make({'light'}) == make({'heavy'}), false);
+        expect(make({'light'}) == make({}), false);
+      });
+    });
   });
 
   group('Vehicle', () {
