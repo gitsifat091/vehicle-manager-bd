@@ -9,7 +9,7 @@ Last updated: 2026-10-22
 - Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 562 tests pass, `flutter analyze` is clean. Economy config is version 0.4
 - Milestone 4 is in progress: steps 1 to 8 (and 5b, 7b, 8b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
-- Next: step 9, garage screen and vehicle detail
+- Next: step 9a, garage list and vehicle detail
 
 ## Milestones
 
@@ -41,15 +41,20 @@ Each step ends with `flutter analyze` and `flutter test` passing, and one commit
 | 7b | Every engine operation finishes a half-written save before reading state (no double payment while the app keeps running) | Done |
 | 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | Done |
 | 8b | Starter sells for `settings.starterSaleValue`; the last vehicle cannot be sold when the cash after the sale would not buy the cheapest vehicle | Done |
-| 9 | Garage screen and vehicle detail | Next |
+| 9a | Garage list and vehicle detail: tiles with status, route, cargo and profit per hour; detail in the page area (side panel when expanded), kept in the shared selection; unassign; system back closes the detail | Next |
+| 9b | Selling: `AppButtons.danger`, confirmation with the sale value, `starterSaleNote` for the starter, each `checkSale` refusal explained | |
 | 10 | Assign route and cargo (removes the temporary button) | |
 | 11a | Buy screen, static: tiers, locks, slot count, demand preview | |
-| 11b | Buy screen, interaction: buy vehicle, buy permit | |
+| 11b | Buy screen, interaction: buy vehicle, buy permit. The swap hint (`swapHint`) goes here, shown when the garage is full and the player picks a vehicle to buy | |
 | 12a | Map screen, static: `assets/config/map_layout.json`, cities, routes, vehicles | |
 | 12b | Map screen, interaction: pan, zoom, wheel, tap a route | |
 | 13 | Finance screen from the rollups | |
 | 14 | Settings screen: language, theme, new game with confirmation | |
 | 15 | Closing pass: wide layout, dark theme, touch targets, manual runs on Windows and Android | |
+
+### Milestone 5 items
+
+- **Balance pass.** Extend `tool/pacing_probe.dart` to sweep starting cash from Tk 5 to 10 lakh in 1 lakh steps (no price variants) and report per policy (U, B, D, E): income in each of hours 1, 2 and 3, the hour 1 to hour 2 ratio, the minute the garage fills, the minute the first terminal becomes affordable, idle cash at hour 3, and U's first-upgrade minute. Pick the value where U upgrades between minute 20 and 30, the hour 1 to hour 2 ratio is clearly below today's, and B can afford the first terminal well before cash sits idle. Report the table before changing the sheet
 
 ## Decisions made (do not reopen without a reason)
 
@@ -58,6 +63,7 @@ Economy and balance
 - Time scale: 1 game hour = 1 real minute (1 game day = 24 real minutes)
 - Turbo Start: 20x, 10x, 5x over the first 60 minutes, counting foreground play time only
 - Start: Tk 15 lakh cash plus one free Sathi Plus (tier 4)
+- Pacing lever: starting cash only (option 1). Truck prices stay real, so options 2 and 3 are rejected. The value stays Tk 15 lakh until the Milestone 5 balance pass, because terminals and slot expansion compete for the same cash. The first upgrade becomes a goal through a Milestone 6 checklist task (buy a second Sathi Plus), not through cash alone
 - Line hauls capped by `settings.maxLineHaulKm` (400). Cargo compatibility comes from `cargo.allowedTiers`
 - Overload means tons above the legal payload, capped at the vehicle's max load
 - Tier 1 (Sonar Van) runs only M01 and M02, through `vehicles[].allowedRoutes` (empty list = any route; sheet: Vehicles column U). Tier 2 (Bijli Cargo) stays unrestricted. Reason: with R01 to R03 open, a buyer got about 166 vans in the first 12 minutes
@@ -128,22 +134,6 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
    - **F** (E plus permits) bought no permit and equals E. On the Dhaka Local routes no permit-locked vehicle beats the worst one, because large vehicles do not fit them (a Pahari Tipper holds 0.0 to 0.8 per Local route)
    - **With Line hauls** (diagnostic G = E, H = F, an attentive player): total income 108.0 and 108.3. G stalls from hour 4 with 36 idle. H buys one permit (Light) and one Meghna 14 and ends lower in net worth at resale value (63.3 against 74.7)
    - **Conclusion:** selling and permits do not carry the mid-game on Local routes. Large vehicles and Line hauls need terminals. In Milestone 5, validate the mid-game with a terminal-buying policy in the tool, and price terminals and slot expansion for the idle cash. No balance number changes until then
-5. **First upgrade as an early goal (not decided, economy.json and the sheet unchanged).** Goal: the first upgrade around minute 20 to 30 for a typical player. Today it happens at minute 0 for policies B to H, because the starting Tk 15 lakh already buys one. "First upgrade" is the first purchase whose job earns more per real hour than the starter's own job (Sathi Plus, R01, General dry). On the Dhaka Local routes only one purchase qualifies: another Sathi Plus (Tk 13 lakh) carrying parcels. Figures from `dart run tool/pacing_probe.dart` (3 hours, 20 seeds, medians, config edited in memory only):
-
-   | Option | U: first upgrade | 3 h income, Tk lakh (U / B / D / E / G) |
-   |---|---|---|
-   | Today (cash Tk 15 lakh) | minute 0 | 57.3 / 49.2 / 42.6 / 59.4 / 75.4 |
-   | 1. Starting cash Tk 7 lakh | 19.3 min | 25.2 / 23.5 / 31.1 / 42.2 / 46.0 |
-   | 1. Starting cash Tk 6 lakh | 24.9 min | 22.1 / 21.8 / 31.2 / 41.6 / 44.3 |
-   | 1. Starting cash Tk 5 lakh | 31.4 min | 20.5 / 20.1 / 28.0 / 40.0 / 43.8 |
-   | 2. Tiers 3 and 4 at 1.75x (Sathi Plus Tk 22.75 lakh), cash Tk 15 lakh | 29.9 min | 20.9 / 19.5 / 34.4 / 38.7 / 41.0 |
-   | 3. Cash Tk 10 lakh and tiers 3 and 4 at 1.25x (Sathi Plus Tk 16.25 lakh) | 20.2 min | 22.1 / 22.9 / 34.4 / 40.4 / 44.0 |
-
-   - **Spending bots never upgrade.** With less than Tk 13 lakh at the start, policies A to G never upgrade within 3 hours in any option: they spend at once on cheaper vehicles (vans, Bijli Cargos, Tuntuni Minis) and fill the garage first. E keeps its cash at 3 to 6 lakh, so it never affords the Sathi Plus either
-   - **Saver bot (U, probe only):** keeps the starter working and buys only tier 4 and up, so it buys nothing until a Sathi Plus is affordable. Its upgrade time follows from the starter's earnings (about Tk 31,000 a minute at 20x) and the gap between the starting cash and Tk 13 lakh
-   - **Trade-offs:** every option cuts 3-hour income by about 30 to 60 percent, most of it in hour 1, because fewer vehicles run during the 20x turbo. Option 1 is one game-design number and keeps truck prices real (recommended). Option 2 breaks the decision that truck prices stay fully real and raises the starter's own price (and so its accident cost). Option 3 moves prices less but still moves them
-   - **Not checked yet:** the first terminal at Tk 8 lakh (lower starting cash delays it), and open question 1 (cash idle after the turbo, which lower starting cash may ease)
-   - **Likely the real lever:** the upgrade only becomes a goal when the player saves for it. A Milestone 6 checklist task (for example "buy a second Sathi Plus", with a reward) may be what makes it one, with or without a balance change
 
 ## Known gaps (fix before release, not now)
 
@@ -152,7 +142,9 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Route distances are approximate. Replace with real road distances (OSRM) during data prep
 - Meghna+Gumti and Paturia ferry tolls are partly estimated. Re-verify all tolls, diesel price and truck prices before release
 - The garage's "Start working" button (R01, General dry hardcoded) is temporary: the assign screen replaces it in step 10. Map, finance and settings are `ComingLater` placeholders until steps 12 to 14
-- `DayRollup` records are never pruned: one per game day with a settled trip, about 60 a real day at 1x (a few kB each day, about 1 MB a year of daily play, all loaded by Hive). Not decided in step 8: keep them all, or cap them when the finance screen (step 13) shows how far back it looks- Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
+- `DayRollup` records are never pruned: one per game day with a settled trip, about 60 a real day at 1x (a few kB each day, about 1 MB a year of daily play, all loaded by Hive). Not decided in step 8: keep them all, or cap them when the finance screen (step 13) shows how far back it looks
+- Per-vehicle lifetime totals: decide in step 13 (finance screen). Same pattern as Company.lifetimeRevenue: new adapter fields defaulting to zero, updated in the settlement ChangeSet
+- Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
 - The pacing tool's bots buy no permits, so tiers 5 and up are never tested for pacing. Add permit buying to the bots when tier 5 and up matter (Milestone 5 or later)
 
 ## Tooling notes
@@ -160,8 +152,9 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
 - `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale] [--sell-starter]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
-- `dart run tool/pacing_probe.dart [filter ...]` runs first_hours_sim on in-memory variants of starting cash and tier 3 and 4 prices and prints the first-upgrade minute and 3-hour income per policy (open question 5). It adds the saver policy U
-- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
+- `dart run tool/pacing_probe.dart [filter ...]` runs first_hours_sim on in-memory variants of starting cash and tier 3 and 4 prices and prints the first-upgrade minute and 3-hour income per policy (the pacing lever decision; the Milestone 5 balance pass extends it). It adds the saver policy U
+- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)
+- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
 - `lib`, `test` and `tool` are `dart format` clean, so formatting any file or the whole tree only changes what you edited
 - Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
 - Use high effort (`/effort`) for milestone work
