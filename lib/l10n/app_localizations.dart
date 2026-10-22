@@ -236,6 +236,12 @@ abstract class AppLocalizations {
   /// **'Goes again in {time}'**
   String vehicleDepartsIn(String time);
 
+  /// Shown on the sell screen for the free vehicle the company started with, which sells for a fixed amount instead of a share of its price. The amount is already formatted as money.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your company\'s starter vehicle. It sells for a fixed {amount}.'**
+  String starterSaleNote(String amount);
+
   /// Temporary button on the garage screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists.
   ///
   /// In en, this message translates to:

@@ -92,6 +92,11 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String starterSaleNote(String amount) {
+    return 'এটি আপনার কোম্পানির শুরুর যানবাহন। বিক্রি করলে নির্দিষ্ট $amount পাবেন।';
+  }
+
+  @override
   String get tempStartWorking => 'কাজে পাঠান (সাময়িক)';
 
   @override

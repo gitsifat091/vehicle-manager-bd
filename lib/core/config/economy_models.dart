@@ -37,6 +37,7 @@ class EconomySettings {
     required this.startingGarageSlots,
     required this.resaleShareOfPrice,
     required this.starterVehicleTier,
+    required this.starterSaleValue,
   });
 
   final double dieselPricePerLitre;
@@ -74,6 +75,11 @@ class EconomySettings {
   /// The tier of the free vehicle a new company starts with. It counts toward
   /// the garage slots and must be open from the start.
   final int starterVehicleTier;
+
+  /// What selling the free starter vehicle pays, in whole Taka, instead of
+  /// [resaleShareOfPrice] of its price. It was free, so a normal resale
+  /// would be extra starting cash. See saleValueTk.
+  final int starterSaleValue;
 }
 
 class VehicleSpec {

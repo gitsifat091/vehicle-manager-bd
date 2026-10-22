@@ -92,6 +92,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String starterSaleNote(String amount) {
+    return 'This is your company\'s starter vehicle. It sells for a fixed $amount.';
+  }
+
+  @override
   String get tempStartWorking => 'Start working (temporary)';
 
   @override

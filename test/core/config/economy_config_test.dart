@@ -256,6 +256,22 @@ void main() {
       }
     });
 
+    test('reads starterSaleValue and rejects a missing or negative one', () {
+      expect(config.settings.starterSaleValue, 150000);
+      final missing = edited((j) => j['settings'].remove('starterSaleValue'));
+      expect(
+        () => EconomyConfig.parse(missing),
+        configError('settings.starterSaleValue is missing'),
+      );
+      final negative = edited((j) => j['settings']['starterSaleValue'] = -1);
+      expect(
+        () => EconomyConfig.parse(negative),
+        configError('starterSaleValue must be 0 or more'),
+      );
+      final zero = edited((j) => j['settings']['starterSaleValue'] = 0);
+      expect(EconomyConfig.parse(zero).settings.starterSaleValue, 0);
+    });
+
     test('reads starterVehicleTier and checks it is an open tier', () {
       expect(config.settings.starterVehicleTier, 4);
       expect(config.vehicleByTier(4).availableAtStart, true);

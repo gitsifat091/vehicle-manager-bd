@@ -698,12 +698,12 @@ void main() {
   });
 
   group('selling', () {
-    // The free starter Sathi Plus sells for 60 percent of Tk 13 lakh.
-    const starterResale = 780000;
+    // The free starter sells for settings.starterSaleValue, not 60 percent.
+    const starterSale = 150000;
 
     String starterId() => db.vehicles.all().single.id;
 
-    test('an idle vehicle sells for its resale value', () async {
+    test('the idle starter sells for the fixed starter value', () async {
       await engine.startNewGame('Test Ltd');
       var heard = 0;
       engine.addListener(() => heard++);
@@ -711,7 +711,7 @@ void main() {
       expect(await engine.sellVehicle(starterId()), isNull);
 
       expect(db.vehicles.count, 0);
-      expect(db.company.load()!.cash, 1500000 + starterResale);
+      expect(db.company.load()!.cash, 1500000 + starterSale);
       expect(db.pending.load(), isNull);
       expect(heard, 1);
       expect(engine.snapshot.vehicles, isEmpty);
@@ -744,12 +744,12 @@ void main() {
 
       expect(await engine.sellVehicle(id), isNull);
       expect(db.vehicles.get(id), isNull);
-      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterResale);
+      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterSale);
 
       // A second tap on the same sale changes nothing.
       final again = await engine.sellVehicle(id);
       expect(again!.reason, SaleRejectionReason.notOwned);
-      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterResale);
+      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterSale);
     });
 
     test('unassigning a vehicle that waits for demand keeps it home', () async {
@@ -813,6 +813,85 @@ void main() {
     test('without a game selling is a programming error', () async {
       expect(() => engine.sellVehicle('v1'), throwsStateError);
       expect(() => engine.unassignVehicle('v1'), throwsStateError);
+    });
+
+    test('a new game marks only its free vehicle as the starter', () async {
+      await engine.startNewGame('Test Ltd');
+      expect(db.vehicles.all().single.isStarter, true);
+      final bought = (await engine.buyVehicle(4)).vehicle!;
+      expect(db.vehicles.get(bought.id)!.isStarter, false);
+
+      // A bought Sathi Plus sells for 60 percent, the starter for Tk 1.5 lakh.
+      final before = db.company.load()!.cash;
+      expect(await engine.sellVehicle(bought.id), isNull);
+      expect(db.company.load()!.cash, before + 780000);
+      expect(await engine.sellVehicle(starterId()), isNull);
+      expect(db.company.load()!.cash, before + 780000 + starterSale);
+    });
+  });
+
+  group('selling the last vehicle', () {
+    // The Sonar Van, Tk 20,000, is the cheapest vehicle open at the start.
+    // A starter that sells for nothing makes the edge easy to hit.
+    GameEngine engineWith(int startingCash) => makeEngine(
+      config: quietConfig((j) {
+        j['settings']['startingCash'] = startingCash;
+        j['settings']['starterSaleValue'] = 0;
+      }),
+    );
+
+    String onlyVehicle() => db.vehicles.all().single.id;
+
+    test('one Taka short of the cheapest vehicle is refused', () async {
+      engine.dispose();
+      engine = engineWith(19999);
+      await engine.startNewGame('Test Ltd');
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      final refused = await engine.sellVehicle(onlyVehicle());
+
+      expect(refused!.reason, SaleRejectionReason.lastVehicleUnaffordable);
+      expect(db.vehicles.count, 1, reason: 'nothing was sold');
+      expect(db.company.load()!.cash, 19999);
+      expect(heard, 0);
+    });
+
+    test('exactly the cheapest price after the sale is allowed', () async {
+      engine.dispose();
+      engine = engineWith(20000);
+      await engine.startNewGame('Test Ltd');
+
+      expect(await engine.sellVehicle(onlyVehicle()), isNull);
+      expect(db.vehicles.count, 0);
+      expect(db.company.load()!.cash, 20000);
+      // And the company can still buy its way back.
+      expect((await engine.buyVehicle(1)).bought, true);
+    });
+
+    test('a bought last vehicle is guarded too', () async {
+      engine.dispose();
+      engine = engineWith(20000);
+      await engine.startNewGame('Test Ltd');
+      await engine.sellVehicle(onlyVehicle());
+      final van = (await engine.buyVehicle(1)).vehicle!;
+      expect(db.company.load()!.cash, 0);
+
+      // The van resells for Tk 12,000, less than a new one costs.
+      final refused = await engine.sellVehicle(van.id);
+      expect(refused!.reason, SaleRejectionReason.lastVehicleUnaffordable);
+      expect(db.vehicles.get(van.id), isNotNull);
+    });
+
+    test('with a second vehicle the guard does not apply', () async {
+      engine.dispose();
+      engine = engineWith(20000);
+      await engine.startNewGame('Test Ltd');
+      final starter = onlyVehicle();
+      await engine.buyVehicle(1);
+      expect(db.company.load()!.cash, 0);
+      expect(await engine.sellVehicle(starter), isNull);
+      expect(db.vehicles.count, 1);
     });
   });
 

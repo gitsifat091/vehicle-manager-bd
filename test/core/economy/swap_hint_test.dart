@@ -55,6 +55,34 @@ void main() {
       );
     });
 
+    test('the starter is valued at its fixed sale value', () {
+      final sold = job(4, 'R01', 'General dry');
+      final bought = job(6, 'R05', 'General dry');
+      final hint = swapHint(
+        settings: settings,
+        sold: sold.vehicle,
+        soldJob: sold,
+        boughtJob: bought,
+        soldIsStarter: true,
+      );
+      expect(hint.soldIsStarter, true);
+      expect(hint.resaleTk, 150000);
+      expect(hint.lossTk, 1300000 - 150000);
+      expect(
+        hint.paybackRealHours,
+        closeTo((1300000 - 150000) / hint.profitGainPerRealHour, 1e-9),
+      );
+
+      final bought2 = swapHint(
+        settings: settings,
+        sold: sold.vehicle,
+        soldJob: sold,
+        boughtJob: bought,
+      );
+      expect(bought2.soldIsStarter, false);
+      expect(bought2.resaleTk, 780000);
+    });
+
     test('a worse new job never pays back', () {
       final sold = job(4, 'R01', 'General dry');
       final bought = job(1, 'M01', 'Market goods');

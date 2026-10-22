@@ -27,7 +27,8 @@
     "maxLineHaulKm": 400,
     "startingGarageSlots": 6,
     "resaleShareOfPrice": 0.6,
-    "starterVehicleTier": 4
+    "starterVehicleTier": 4,
+    "starterSaleValue": 150000
   },
   "permits": [
     {

@@ -2,11 +2,13 @@
 // buyer, to check the first-hour pacing against docs/economy_model.xlsx.
 //
 //   dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]
+//       [--sell-starter]
 //
 // Defaults: 3 hours, 20 seeds, policies ABCDE (for example "ADE" runs three).
 // [resale] overrides settings.resaleShareOfPrice in memory for a sensitivity
-// run. It changes no balance numbers: everything comes from
-// assets/config/economy.json.
+// run. --sell-starter sells the free starter at minute 0 for
+// settings.starterSaleValue before anything else. It changes no balance
+// numbers: everything comes from assets/config/economy.json.
 //
 // The player model
 // - Starts with the starting cash and one free Sathi Plus on R01 (General dry).
@@ -85,7 +87,10 @@ class Policy {
   final bool includeLine;
 }
 
-void main(List<String> args) {
+void main(List<String> arguments) {
+  // Flags (--sell-starter) may come anywhere; the rest are positional.
+  final sellStarter = arguments.contains('--sell-starter');
+  final args = arguments.where((a) => !a.startsWith('--')).toList();
   final hours = args.isNotEmpty ? int.parse(args[0]) : 3;
   final seeds = args.length > 1 ? int.parse(args[1]) : 20;
   var jsonText = File('assets/config/economy.json').readAsStringSync();
@@ -111,6 +116,13 @@ void main(List<String> args) {
   print(
     'Garage slots: ${config.settings.startingGarageSlots} '
     '(the free Sathi Plus counts); no selling',
+  );
+  print(
+    sellStarter
+        ? 'Starter: sold at minute 0 for '
+              'Tk ${money(config.settings.starterSaleValue)}'
+        : 'Starter: kept (it would sell for '
+              'Tk ${money(config.settings.starterSaleValue)})',
   );
 
   const policies = [
@@ -192,7 +204,13 @@ void main(List<String> args) {
 
     final runs = [
       for (var seed = 1; seed <= seeds; seed++)
-        simulate(config: config, seed: seed, hours: hours, policy: policy),
+        simulate(
+          config: config,
+          seed: seed,
+          hours: hours,
+          policy: policy,
+          sellStarter: sellStarter,
+        ),
     ];
 
     print('');
@@ -217,6 +235,11 @@ void main(List<String> args) {
     );
     summary('Permits bought', runs.map((r) => r.permitPurchases.length));
     summary('Purchases in hour 1', runs.map((r) => r.purchasesBefore(60)));
+    summary(
+      'First upgrade (a purchase earning more per hour than the starter)',
+      runs.map((r) => r.firstUpgradeMin),
+      unit: 'min',
+    );
     summary(
       'Minute the garage cap is reached',
       runs.map((r) => r.capReachedMin),
@@ -379,13 +402,23 @@ List<Candidate> buildCandidates(EconomyConfig config, Policy policy) {
 }
 
 class Purchase {
-  Purchase(this.minute, this.tier, this.label, this.price, this.cashAfter);
+  Purchase(
+    this.minute,
+    this.tier,
+    this.label,
+    this.price,
+    this.cashAfter,
+    this.profitPerRealHour,
+  );
 
   final double minute;
   final int tier;
   final String label;
   final int price;
   final int cashAfter;
+
+  /// What the bought vehicle's job earns per real hour at 1x.
+  final double profitPerRealHour;
 }
 
 class Sale {
@@ -405,9 +438,23 @@ class PermitPurchase {
 }
 
 class RunResult {
-  RunResult({required this.hours});
+  RunResult({required this.hours, required this.starterProfitPerRealHour});
 
   final int hours;
+
+  /// What the free starter earns per real hour on its own job (Sathi Plus,
+  /// R01, General dry). A purchase that earns more is an upgrade.
+  final double starterProfitPerRealHour;
+
+  /// Real minute of the first purchase whose job earns more per hour than
+  /// the starter's, or null when none came.
+  double? get firstUpgradeMin {
+    for (final p in purchases) {
+      if (p.profitPerRealHour > starterProfitPerRealHour) return p.minute;
+    }
+    return null;
+  }
+
   final purchases = <Purchase>[];
   final sales = <Sale>[];
   final permitPurchases = <PermitPurchase>[];
@@ -535,6 +582,7 @@ RunResult simulate({
   required int seed,
   required int hours,
   required Policy policy,
+  bool sellStarter = false,
 }) {
   final start = DateTime.utc(2026, 3, 1, 8);
   final schedule = TurboSchedule.fromSettings(config.settings);
@@ -553,16 +601,7 @@ RunResult simulate({
     });
 
   var company = Company.newGame(config: config, name: 'Sim', now: start);
-  final vehicles = <String, Vehicle>{
-    'v0': Vehicle(
-      id: 'v0',
-      tier: 4,
-      purchasedAt: start,
-      assignedRouteId: 'R01',
-      assignedCargo: 'General dry',
-      availableAt: start,
-    ),
-  };
+  final vehicles = <String, Vehicle>{};
   var open = <Trip>[];
   final routeStates = {
     for (final r in config.routes)
@@ -579,15 +618,48 @@ RunResult simulate({
     route: config.routeById('R01'),
     cargo: config.cargoByName('General dry'),
   );
-  commit('R01', starter.tonsPerGameDay);
 
   // What each vehicle is doing, for policy E to rank by profit per hour.
-  final doing = <String, Candidate>{'v0': starter};
+  final doing = <String, Candidate>{};
   // Vehicles E has unassigned and will sell when their trip has settled.
   final retiring = <String>{};
   var nextVehicleNumber = 1;
 
-  final result = RunResult(hours: hours);
+  final result = RunResult(
+    hours: hours,
+    starterProfitPerRealHour: starter.profitPerRealHour,
+  );
+
+  if (sellStarter) {
+    // The free starter is sold before anything else happens.
+    final value = config.settings.starterSaleValue;
+    company = company.copyWith(cash: company.cash + value);
+    result.sales.add(Sale(0, 4, value));
+  } else {
+    vehicles['v0'] = Vehicle(
+      id: 'v0',
+      tier: 4,
+      purchasedAt: start,
+      assignedRouteId: 'R01',
+      assignedCargo: 'General dry',
+      availableAt: start,
+      isStarter: true,
+    );
+    commit('R01', starter.tonsPerGameDay);
+    doing['v0'] = starter;
+  }
+
+  /// What selling vehicle [id] pays: the fixed starter value for the free
+  /// starter, the resale share of the price for any other.
+  int saleOf(String id) {
+    final v = vehicles[id]!;
+    return saleValueTk(
+      settings: config.settings,
+      vehicle: config.vehicleByTier(v.tier),
+      isStarter: v.isStarter,
+    );
+  }
+
   final horizon = Duration(hours: hours);
 
   SimWorld world() => SimWorld(
@@ -724,12 +796,19 @@ RunResult simulate({
 
     // Sell retiring vehicles whose last trip has settled.
     for (final id in retiring.toList()) {
-      if (checkSale(onTheRoad: open.any((t) => t.vehicleId == id)) != null) {
-        continue;
-      }
+      final price = saleOf(id);
+      final refused = checkSale(
+        onTheRoad: open.any((t) => t.vehicleId == id),
+        vehiclesOwned: vehicles.length,
+        cashAfterSale: company.cash + price,
+        cheapestBuyableTk: cheapestBuyablePriceTk(
+          config: config,
+          completedTrips: company.completedTrips,
+          ownedPermits: company.permits,
+        ),
+      );
+      if (refused != null) continue;
       final vehicle = vehicles.remove(id)!;
-      final spec = config.vehicleByTier(vehicle.tier);
-      final price = resaleValueTk(settings: config.settings, vehicle: spec);
       company = company.copyWith(cash: company.cash + price);
       result.sales.add(Sale(minute, vehicle.tier, price));
       doing.remove(id);
@@ -746,9 +825,7 @@ RunResult simulate({
       if (worstId != null) {
         final worst = doing[worstId]!;
         final full = garageFull();
-        final resale = full
-            ? resaleValueTk(settings: config.settings, vehicle: worst.vehicle)
-            : 0;
+        final resale = full ? saleOf(worstId) : 0;
         final unowned =
             config.permits
                 .where((p) => !company.permits.contains(p.id))
@@ -821,6 +898,7 @@ RunResult simulate({
             c.label,
             c.vehicle.priceTk,
             company.cash,
+            c.profitPerRealHour,
           ),
         );
         if (checkGarageSlot(
@@ -850,9 +928,7 @@ RunResult simulate({
       final worstId = worstVehicleId();
       if (worstId != null) {
         final worst = doing[worstId]!;
-        final cashAfterSale =
-            company.cash +
-            resaleValueTk(settings: config.settings, vehicle: worst.vehicle);
+        final cashAfterSale = company.cash + saleOf(worstId);
         final better = candidates.any((c) {
           if (c.profitPerRealHour <= worst.profitPerRealHour) return false;
           if (c.vehicle.priceTk > cashAfterSale) return false;
@@ -947,10 +1023,7 @@ RunResult simulate({
   );
   for (final v in vehicles.values) {
     result.fleetTiers.add(v.tier);
-    result.fleetResaleValue += resaleValueTk(
-      settings: config.settings,
-      vehicle: config.vehicleByTier(v.tier),
-    );
+    result.fleetResaleValue += saleOf(v.id);
   }
   result.finalCash = company.cash;
   result.completedTrips = company.completedTrips;

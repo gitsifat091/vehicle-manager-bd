@@ -14,10 +14,17 @@ class SwapHint {
     required this.profitGainPerRealHour,
     required this.paybackRealHours,
     required this.boughtJob,
+    this.soldIsStarter = false,
   });
 
-  /// What the sale pays.
+  /// What the sale pays: the fixed starter sale value for the free starter,
+  /// the resale share of the price for any other vehicle.
   final int resaleTk;
+
+  /// True when the sold vehicle is the company's free starter. The sell
+  /// screen says so, because its value is fixed rather than a share of the
+  /// price.
+  final bool soldIsStarter;
 
   /// The part of the sold vehicle's price the sale does not return.
   final int lossTk;
@@ -39,15 +46,22 @@ class SwapHint {
 ///
 /// [soldJob] is what the sold vehicle earns now: its assigned route and cargo
 /// (`routeEconomics`), or null when it is idle and earns nothing.
+/// [soldIsStarter] marks the free starter, which sells for
+/// settings.starterSaleValue.
 SwapHint swapHint({
   required EconomySettings settings,
   required VehicleSpec sold,
   RouteEconomics? soldJob,
   required RouteEconomics boughtJob,
+  bool soldIsStarter = false,
 }) {
   final soldPerHour = soldJob?.profitPerRealHour ?? 0;
   final boughtPerHour = boughtJob.profitPerRealHour;
-  final resale = resaleValueTk(settings: settings, vehicle: sold);
+  final resale = saleValueTk(
+    settings: settings,
+    vehicle: sold,
+    isStarter: soldIsStarter,
+  );
   return SwapHint(
     resaleTk: resale,
     lossTk: sold.priceTk - resale,
@@ -57,8 +71,10 @@ SwapHint swapHint({
       sold: sold,
       soldProfitPerHour: soldPerHour,
       boughtProfitPerHour: boughtPerHour,
+      soldIsStarter: soldIsStarter,
     ),
     boughtJob: boughtJob,
+    soldIsStarter: soldIsStarter,
   );
 }
 

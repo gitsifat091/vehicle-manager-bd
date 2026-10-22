@@ -77,11 +77,132 @@ void main() {
     });
 
     test('a vehicle on the road cannot be sold', () {
+      SaleRejection? check({required bool onTheRoad}) => checkSale(
+        onTheRoad: onTheRoad,
+        vehiclesOwned: 3,
+        cashAfterSale: 1000000,
+        cheapestBuyableTk: 20000,
+      );
       expect(
-        checkSale(onTheRoad: true)?.reason,
+        check(onTheRoad: true)?.reason,
         SaleRejectionReason.vehicleOnTheRoad,
       );
-      expect(checkSale(onTheRoad: false), isNull);
+      expect(check(onTheRoad: false), isNull);
+    });
+  });
+
+  group('the starter sale value', () {
+    final config = loadDefaultConfig();
+    final sathi = config.vehicleByTier(4);
+
+    test('the starter sells for the fixed value, any other for 60 percent', () {
+      expect(settings.starterSaleValue, 150000);
+      expect(
+        saleValueTk(settings: settings, vehicle: sathi, isStarter: true),
+        150000,
+      );
+      expect(
+        saleValueTk(settings: settings, vehicle: sathi, isStarter: false),
+        780000,
+      );
+    });
+
+    test('the swap payback counts the starter as losing price minus value', () {
+      final asStarter = swapPaybackHours(
+        settings: settings,
+        sold: sathi,
+        soldProfitPerHour: 0,
+        boughtProfitPerHour: 1000,
+        soldIsStarter: true,
+      );
+      expect(asStarter, (1300000 - 150000) / 1000);
+      final asBought = swapPaybackHours(
+        settings: settings,
+        sold: sathi,
+        soldProfitPerHour: 0,
+        boughtProfitPerHour: 1000,
+      );
+      expect(asBought, (1300000 - 780000) / 1000);
+    });
+  });
+
+  group('selling the last vehicle', () {
+    final config = loadDefaultConfig();
+
+    test('the cheapest buyable vehicle follows the unlocks', () {
+      // Tiers 1, 2 and 4 are open at the start: the Sonar Van is cheapest.
+      expect(
+        cheapestBuyablePriceTk(
+          config: config,
+          completedTrips: 0,
+          ownedPermits: {},
+        ),
+        20000,
+      );
+      final vanLocked = editedConfig((j) {
+        final van = (j['vehicles'] as List).firstWhere((v) => v['tier'] == 1);
+        van['unlockDeliveries'] = 5;
+      });
+      expect(
+        cheapestBuyablePriceTk(
+          config: vanLocked,
+          completedTrips: 4,
+          ownedPermits: {},
+        ),
+        150000,
+        reason: 'the Bijli Cargo while the van is locked',
+      );
+      expect(
+        cheapestBuyablePriceTk(
+          config: vanLocked,
+          completedTrips: 5,
+          ownedPermits: {},
+        ),
+        20000,
+      );
+    });
+
+    SaleRejection? check({
+      int owned = 1,
+      required int cashAfter,
+      int? cheapest = 20000,
+    }) => checkSale(
+      onTheRoad: false,
+      vehiclesOwned: owned,
+      cashAfterSale: cashAfter,
+      cheapestBuyableTk: cheapest,
+    );
+
+    test('cash after the sale exactly at the cheapest price is enough', () {
+      expect(check(cashAfter: 20000), isNull);
+    });
+
+    test('one Taka short of the cheapest price is refused', () {
+      expect(
+        check(cashAfter: 19999)?.reason,
+        SaleRejectionReason.lastVehicleUnaffordable,
+      );
+    });
+
+    test('only the last vehicle is guarded', () {
+      expect(check(owned: 2, cashAfter: 0), isNull);
+    });
+
+    test('with nothing unlocked the last vehicle cannot be sold', () {
+      expect(
+        check(cashAfter: 100000000, cheapest: null)?.reason,
+        SaleRejectionReason.lastVehicleUnaffordable,
+      );
+    });
+
+    test('a vehicle on the road is refused for that first', () {
+      final r = checkSale(
+        onTheRoad: true,
+        vehiclesOwned: 1,
+        cashAfterSale: 0,
+        cheapestBuyableTk: 20000,
+      );
+      expect(r?.reason, SaleRejectionReason.vehicleOnTheRoad);
     });
   });
 

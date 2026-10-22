@@ -13,6 +13,7 @@ class Vehicle {
     this.assignedCargo,
     this.overloadT = 0,
     DateTime? availableAt,
+    this.isStarter = false,
   }) : purchasedAt = purchasedAt.toUtc(),
        availableAt = availableAt?.toUtc(),
        assert(
@@ -36,6 +37,11 @@ class Vehicle {
   /// when it is waiting for demand. Null when not assigned.
   final DateTime? availableAt;
 
+  /// True for the free vehicle a new company starts with. It sells for
+  /// `settings.starterSaleValue`, not the resale share of its price. False in
+  /// saves from before the flag existed.
+  final bool isStarter;
+
   bool get isAssigned => assignedRouteId != null;
 
   Vehicle withAssignment({
@@ -52,6 +58,7 @@ class Vehicle {
       assignedCargo: cargoName,
       overloadT: overloadT,
       availableAt: availableAt,
+      isStarter: isStarter,
     );
   }
 
@@ -65,11 +72,17 @@ class Vehicle {
       assignedCargo: assignedCargo,
       overloadT: overloadT,
       availableAt: availableAt,
+      isStarter: isStarter,
     );
   }
 
   Vehicle withoutAssignment() {
-    return Vehicle(id: id, tier: tier, purchasedAt: purchasedAt);
+    return Vehicle(
+      id: id,
+      tier: tier,
+      purchasedAt: purchasedAt,
+      isStarter: isStarter,
+    );
   }
 
   @override
@@ -81,7 +94,8 @@ class Vehicle {
       other.assignedRouteId == assignedRouteId &&
       other.assignedCargo == assignedCargo &&
       other.overloadT == overloadT &&
-      other.availableAt == availableAt;
+      other.availableAt == availableAt &&
+      other.isStarter == isStarter;
 
   @override
   int get hashCode => Object.hash(
@@ -92,6 +106,7 @@ class Vehicle {
     assignedCargo,
     overloadT,
     availableAt,
+    isStarter,
   );
 
   @override

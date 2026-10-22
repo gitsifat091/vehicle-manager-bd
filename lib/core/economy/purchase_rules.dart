@@ -36,6 +36,11 @@ enum SaleRejectionReason {
   /// The vehicle is not in the garage, for example a second tap on a sale
   /// that already went through.
   notOwned,
+
+  /// It is the company's last vehicle and the cash after the sale would not
+  /// buy the cheapest vehicle the company can buy, so it would be left with
+  /// nothing to earn with.
+  lastVehicleUnaffordable,
 }
 
 /// Why a vehicle cannot be sold. [message] is for logs and tests.
@@ -49,41 +54,98 @@ class SaleRejection {
   String toString() => 'SaleRejection(${reason.name}): $message';
 }
 
-/// What selling [vehicle] pays, in whole Taka: its price times
+/// What selling a bought [vehicle] pays, in whole Taka: its price times
 /// settings.resaleShareOfPrice, rounded only here.
 int resaleValueTk({
   required EconomySettings settings,
   required VehicleSpec vehicle,
 }) => (vehicle.priceTk * settings.resaleShareOfPrice).round();
 
+/// What selling an owned vehicle pays: settings.starterSaleValue for the free
+/// starter ([isStarter]), [resaleValueTk] for any other.
+int saleValueTk({
+  required EconomySettings settings,
+  required VehicleSpec vehicle,
+  required bool isStarter,
+}) => isStarter
+    ? settings.starterSaleValue
+    : resaleValueTk(settings: settings, vehicle: vehicle);
+
+/// The price of the cheapest vehicle the company can buy now (unlocked by
+/// [completedTrips] and [ownedPermits]), or null when none is unlocked.
+/// Garage slots and cash are not considered.
+int? cheapestBuyablePriceTk({
+  required EconomyConfig config,
+  required int completedTrips,
+  required Set<String> ownedPermits,
+}) {
+  int? cheapest;
+  for (final v in config.vehicles) {
+    final locked = checkVehicleUnlocked(
+      vehicle: v,
+      completedTrips: completedTrips,
+      ownedPermits: ownedPermits,
+    );
+    if (locked != null) continue;
+    if (cheapest == null || v.priceTk < cheapest) cheapest = v.priceTk;
+  }
+  return cheapest;
+}
+
 /// Returns why a vehicle cannot be sold now, or null when it can.
+///
 /// [onTheRoad] is true while the vehicle has an unsettled trip.
-SaleRejection? checkSale({required bool onTheRoad}) {
-  if (!onTheRoad) return null;
-  return const SaleRejection(
-    SaleRejectionReason.vehicleOnTheRoad,
-    'The vehicle is on the road. Let the trip finish before selling.',
-  );
+/// [vehiclesOwned] counts the vehicle being sold. [cashAfterSale] is the cash
+/// once the sale is paid, and [cheapestBuyableTk] comes from
+/// [cheapestBuyablePriceTk]. Selling the last vehicle is refused unless the
+/// cash after the sale buys at least that vehicle (exactly the price is
+/// enough), so the company can never be left with nothing to earn with.
+SaleRejection? checkSale({
+  required bool onTheRoad,
+  required int vehiclesOwned,
+  required int cashAfterSale,
+  required int? cheapestBuyableTk,
+}) {
+  if (onTheRoad) {
+    return const SaleRejection(
+      SaleRejectionReason.vehicleOnTheRoad,
+      'The vehicle is on the road. Let the trip finish before selling.',
+    );
+  }
+  if (vehiclesOwned <= 1 &&
+      (cheapestBuyableTk == null || cashAfterSale < cheapestBuyableTk)) {
+    return SaleRejection(
+      SaleRejectionReason.lastVehicleUnaffordable,
+      'It is the last vehicle, and Tk $cashAfterSale after the sale does not '
+      'buy the cheapest vehicle (Tk $cheapestBuyableTk).',
+    );
+  }
+  return null;
 }
 
 /// Hours until selling [sold] and buying a better vehicle has paid back what
 /// the sale loses, or null when it never does.
 ///
-/// The loss is the part of the sold vehicle's price that the resale does not
-/// return: `price - resaleValueTk`. The gain is the difference in profit per
-/// real hour, [boughtProfitPerHour] minus [soldProfitPerHour]. Both profits are
-/// per real hour at 1x (price over payback hours in the economy sheet), so the
-/// result is real hours at 1x; Turbo Start makes it pass faster. The price of
-/// the new vehicle is not a loss, because it keeps its own resale value.
+/// The loss is the part of the sold vehicle's price that the sale does not
+/// return: `price - saleValueTk` (for the free starter, [soldIsStarter], its
+/// price minus settings.starterSaleValue). The gain is the difference in
+/// profit per real hour, [boughtProfitPerHour] minus [soldProfitPerHour]. Both
+/// profits are per real hour at 1x (price over payback hours in the economy
+/// sheet), so the result is real hours at 1x; Turbo Start makes it pass
+/// faster. The price of the new vehicle is not a loss, because it keeps its
+/// own resale value.
 double? swapPaybackHours({
   required EconomySettings settings,
   required VehicleSpec sold,
   required double soldProfitPerHour,
   required double boughtProfitPerHour,
+  bool soldIsStarter = false,
 }) {
   final gain = boughtProfitPerHour - soldProfitPerHour;
   if (gain <= 0) return null;
-  final loss = sold.priceTk - resaleValueTk(settings: settings, vehicle: sold);
+  final loss =
+      sold.priceTk -
+      saleValueTk(settings: settings, vehicle: sold, isStarter: soldIsStarter);
   return loss / gain;
 }
 

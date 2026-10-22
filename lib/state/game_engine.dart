@@ -132,6 +132,7 @@ class GameEngine extends ChangeNotifier {
         id: _newId('veh'),
         tier: config.settings.starterVehicleTier,
         purchasedAt: now,
+        isStarter: true,
       ),
     );
     await _db.company.save(
@@ -272,10 +273,13 @@ class GameEngine extends ChangeNotifier {
     return true;
   });
 
-  /// Sells [vehicleId] for its resale value (`resaleValueTk`) and frees its
-  /// garage slot. Refused while the vehicle is on the road (`checkSale`):
-  /// unassign it, let the trip finish, then sell. Returns why it was
-  /// refused, or null when sold.
+  /// Sells [vehicleId] and frees its garage slot. It pays `saleValueTk`: the
+  /// fixed starter sale value for the free starter, the resale share of the
+  /// price for any other vehicle. Refused (`checkSale`) while the vehicle is
+  /// on the road (unassign it, let the trip finish, then sell), and for the
+  /// last vehicle when the cash after the sale would not buy the cheapest
+  /// vehicle the company can buy. Returns why it was refused, or null when
+  /// sold.
   ///
   /// Throws a [StateError] when there is no game.
   Future<SaleRejection?> sellVehicle(String vehicleId) => _serial(() async {
@@ -287,17 +291,28 @@ class GameEngine extends ChangeNotifier {
         'Vehicle $vehicleId is not in the garage.',
       );
     }
+    final cashAfter =
+        company.cash +
+        saleValueTk(
+          settings: config.settings,
+          vehicle: config.vehicleByTier(vehicle.tier),
+          isStarter: vehicle.isStarter,
+        );
     final rejection = checkSale(
       onTheRoad: _db.trips.activeFor(vehicleId) != null,
+      vehiclesOwned: _db.vehicles.count,
+      cashAfterSale: cashAfter,
+      cheapestBuyableTk: cheapestBuyablePriceTk(
+        config: config,
+        completedTrips: company.completedTrips,
+        ownedPermits: company.permits,
+      ),
     );
     if (rejection != null) return rejection;
 
-    final spec = config.vehicleByTier(vehicle.tier);
     await _committer.commit(
       ChangeSet(
-        cashAfter:
-            company.cash +
-            resaleValueTk(settings: config.settings, vehicle: spec),
+        cashAfter: cashAfter,
         completedTripsAfter: company.completedTrips,
         removedVehicleIds: [vehicleId],
       ),

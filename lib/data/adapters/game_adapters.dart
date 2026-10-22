@@ -74,6 +74,7 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       assignedCargo: f[4] as String?,
       overloadT: (f[5] as num?)?.toDouble() ?? 0,
       availableAt: f[6] == null ? null : decodeInstant(f[6]),
+      isStarter: (f[7] as bool?) ?? false,
     );
   }
 
@@ -87,6 +88,7 @@ class VehicleAdapter extends TypeAdapter<Vehicle> {
       4: obj.assignedCargo,
       5: obj.overloadT,
       6: obj.availableAt == null ? null : encodeInstant(obj.availableAt!),
+      if (obj.isStarter) 7: true,
     });
   }
 }

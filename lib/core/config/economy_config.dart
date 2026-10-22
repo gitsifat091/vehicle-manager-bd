@@ -173,6 +173,12 @@ class EconomyConfig {
         'got ${settings.resaleShareOfPrice}',
       );
     }
+    if (settings.starterSaleValue < 0) {
+      throw ConfigException(
+        'settings.starterSaleValue must be 0 or more, '
+        'got ${settings.starterSaleValue}',
+      );
+    }
     final permitIds = <String>{};
     for (final l in permits) {
       if (!permitIds.add(l.id)) {
@@ -273,6 +279,7 @@ EconomySettings _parseSettings(_Reader r) => EconomySettings(
   startingGarageSlots: r.integer('startingGarageSlots'),
   resaleShareOfPrice: r.number('resaleShareOfPrice'),
   starterVehicleTier: r.integer('starterVehicleTier'),
+  starterSaleValue: r.integer('starterSaleValue'),
 );
 
 VehicleSpec _parseVehicle(_Reader r) => VehicleSpec(

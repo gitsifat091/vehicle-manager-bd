@@ -116,6 +116,25 @@ void main() {
       expect(a.withoutAssignment(), v);
     });
 
+    test('the starter flag survives every change and counts in equality', () {
+      final starter = Vehicle(
+        id: 'v1',
+        tier: 4,
+        purchasedAt: t0,
+        isStarter: true,
+      );
+      expect(Vehicle(id: 'v1', tier: 4, purchasedAt: t0).isStarter, false);
+      final assigned = starter.withAssignment(
+        routeId: 'R01',
+        cargoName: 'General dry',
+        availableAt: t0,
+      );
+      expect(assigned.isStarter, true);
+      expect(assigned.withAvailableAt(t0).isStarter, true);
+      expect(assigned.withoutAssignment(), starter);
+      expect(starter == Vehicle(id: 'v1', tier: 4, purchasedAt: t0), false);
+    });
+
     test('route and cargo must be set together', () {
       expect(
         () =>

@@ -124,7 +124,7 @@ void main() {
       overloadT: 4.5,
       availableAt: t0.add(const Duration(minutes: 5)),
     );
-    final idle = Vehicle(id: 'v2', tier: 3, purchasedAt: t0);
+    final idle = Vehicle(id: 'v2', tier: 3, purchasedAt: t0, isStarter: true);
     final terminal = Terminal(id: 'term1', location: 'Dhaka', purchasedAt: t0);
     final route = RouteState(
       routeId: 'R05',
@@ -254,6 +254,7 @@ void main() {
       expect(loaded.assignedCargo, isNull);
       expect(loaded.overloadT, 0);
       expect(loaded.availableAt, isNull);
+      expect(loaded.isStarter, false);
     },
   );
 
