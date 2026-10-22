@@ -32,7 +32,7 @@ import 'dart:math';
 
 import 'package:vehicle_manager_bd/core/config/economy_config.dart';
 import 'package:vehicle_manager_bd/core/economy/purchase_rules.dart';
-import 'package:vehicle_manager_bd/core/economy/trip_planner.dart';
+import 'package:vehicle_manager_bd/core/economy/route_economics.dart';
 import 'package:vehicle_manager_bd/core/economy/unlock_rules.dart';
 import 'package:vehicle_manager_bd/core/sim/game_calendar.dart';
 import 'package:vehicle_manager_bd/core/sim/game_simulator.dart';
@@ -357,55 +357,23 @@ String money(int v) {
   return negative ? '-$s' : s;
 }
 
-class Candidate {
-  Candidate(this.vehicle, this.route, this.cargo, this.quote, this.gmpm);
+/// A vehicle, route and cargo the bot could buy and run. The economics come
+/// from lib/core/economy/route_economics.dart, the same as the buy screen.
+typedef Candidate = RouteEconomics;
 
-  final VehicleSpec vehicle;
-  final RouteSpec route;
-  final CargoSpec cargo;
-  final TripQuote quote;
-  final double gmpm;
-
-  double get profitPerRealHour =>
-      quote.profit / (quote.tripGameHours / gmpm);
-
-  /// Tons a vehicle on this route moves per game day (the same at any turbo
-  /// speed, because trips and days speed up together).
-  double get tonsPerGameDay => 24 / quote.tripGameHours * quote.loadT;
-
+extension CandidateLabel on RouteEconomics {
   String get label => '${vehicle.name} on ${route.id} (${cargo.name})';
 }
 
 List<Candidate> buildCandidates(EconomyConfig config, Policy policy) {
-  final gmpm = config.settings.gameMinutesPerRealMinute;
   final out = <Candidate>[];
   for (final vehicle in config.vehicles) {
     if (vehicle.tier < policy.minTier) continue;
     for (final route in config.routes) {
       if (!dhakaRoutes.contains(route.id)) continue;
       if (!policy.includeLine && route.haulType == HaulType.line) continue;
-      Candidate? best;
-      for (final cargo in config.cargo) {
-        final rejection = checkTripEligibility(
-          settings: config.settings,
-          vehicle: vehicle,
-          route: route,
-          cargo: cargo,
-        );
-        if (rejection != null) continue;
-        final quote = quoteTrip(
-          config: config,
-          vehicle: vehicle,
-          route: route,
-          cargo: cargo,
-        );
-        final c = Candidate(vehicle, route, cargo, quote, gmpm);
-        if (c.quote.profit <= 0) continue;
-        if (best == null || c.profitPerRealHour > best.profitPerRealHour) {
-          best = c;
-        }
-      }
-      if (best != null) out.add(best);
+      final best = bestCargoOn(config: config, vehicle: vehicle, route: route);
+      if (best != null && best.quote.profit > 0) out.add(best);
     }
   }
   return out;
@@ -606,20 +574,11 @@ RunResult simulate({
   final committed = <String, double>{};
   void commit(String routeId, double tons) =>
       committed[routeId] = (committed[routeId] ?? 0) + tons;
-  final starterVehicle = config.vehicleByTier(4);
-  final starterRoute = config.routeById('R01');
-  final starterCargo = config.cargoByName('General dry');
-  final starter = Candidate(
-    starterVehicle,
-    starterRoute,
-    starterCargo,
-    quoteTrip(
-      config: config,
-      vehicle: starterVehicle,
-      route: starterRoute,
-      cargo: starterCargo,
-    ),
-    config.settings.gameMinutesPerRealMinute,
+  final starter = routeEconomics(
+    config: config,
+    vehicle: config.vehicleByTier(4),
+    route: config.routeById('R01'),
+    cargo: config.cargoByName('General dry'),
   );
   commit('R01', starter.tonsPerGameDay);
 
@@ -686,7 +645,7 @@ RunResult simulate({
         (freeing != null && freeing.route.id == c.route.id
             ? freeing.tonsPerGameDay
             : 0);
-    return c.route.dailyDemandT - used >= c.tonsPerGameDay;
+    return RouteDemand(route: c.route, usedTonsPerGameDay: used).fits(c);
   }
 
   /// The vehicle with the lowest profit per real hour, or null for none.

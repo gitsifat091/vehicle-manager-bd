@@ -6,10 +6,10 @@ Last updated: 2026-10-22
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 437 tests pass, `flutter analyze` is clean. Economy config is version 0.4
-- Milestone 4 is in progress: steps 1 to 5 and 5b are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
+- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 450 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestone 4 is in progress: steps 1 to 6 (and 5b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
-- Next: step 6, `route_economics.dart` in core
+- Next: step 7, engine: buy vehicle and buy permit
 
 ## Milestones
 
@@ -36,8 +36,8 @@ Each step ends with `flutter analyze` and `flutter test` passing, and one commit
 | 3 | `settings.starterVehicleTier`, free starter vehicle, new-game screen, read-only vehicle list on the temporary home | Done |
 | 5 | Responsive shell: bottom bar under 600 px, rail and detail panel from 600 px | Done |
 | 5b | Medium layout: rail and full-width page from 600 to 840 px, map and side panel only from 840 px | Done |
-| 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | Next |
-| 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | |
+| 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | Done |
+| 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | Next |
 | 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | |
 | 9 | Garage screen and vehicle detail | |
 | 10 | Assign route and cargo (removes the temporary button) | |
@@ -79,6 +79,7 @@ Milestone 4
 - Device settings (language, theme) live in their own Hive box that a new game does not erase. Language null follows the device, English is the fallback
 - `settings.starterVehicleTier` = 4 (sheet: Settings row 29). The starter is granted by `startNewGame`, unassigned. The company is written last, so a half-made game looks like no game
 - No new packages: plain Navigator, no go_router. The map layout goes in `assets/config/map_layout.json`, not in `economy.json` (it is not economy data)
+- Demand preview economics live in `lib/core/economy/route_economics.dart`: `RouteEconomics` (profit per real hour at 1x, tons per game day, payback, how many of the vehicle a route holds), `bestCargoOn` and `bestCargoPerRoute` (the cargo with the highest profit per hour), and `RouteDemand` (spare demand against the fleet's tons per game day, `fits`, `vehiclesThatFit`). Legal payload, expected fines and accidents, the sheet's payback definition. Both tools use it, so the pacing figures and the buy screen share one formula; their output was unchanged by the move. A game day is 24 game hours (`gameHoursPerDay`)
 - The overload slider stays out of M4 (assign uses 0 overload). Trip history: keep the last 500 settled trips, plus lifetime totals on `Company` and a per-game-day rollup (revenue, costs, trips) for the finance screen, both updated inside the settlement `ChangeSet`; pruning only deletes trips that are already counted
 - Shell (`lib/ui/shell/app_shell.dart`): four places, Map, Garage, Finance, Settings (`ShellDestination`). Three layouts by `WindowClass`, breakpoints `Layout.mediumBreakpoint` (600) and `Layout.expandedBreakpoint` (840) in `lib/ui/layout.dart`. Compact (under 600): the page fills the body with a bottom bar. Medium (600 to 839): a rail, and the selected page fills the area beside it, the map too when selected; no side panel. Reason: at 600 px a map beside a panel got about 200 px. Expanded (840 and up): a rail, the map in the main area, and the selected page in a side panel: half the area beside the rail, 320 to 400 px, but no wider than leaves the map `Layout.mapMinWidth` (360 px) (`Layout.sidePanelWidth`). Neither is ever shrunk below its minimum: when a wide rail (long Bangla labels, large text scale) leaves less than 681 px beside it (`Layout.mapAndPanelFit`), the expanded layout shows the medium content instead (rail, page fills the area, no panel). Choosing Map closes the panel. One selection for all three layouts, so a resize across either breakpoint keeps the page. CLAUDE.md (Platforms) describes the same three layouts. The header on every page shows company, cash and a turbo badge (only while the speed is above 1). The start page is the garage until the map is built in step 12. Pages have no Scaffold of their own. Icons are Flutter's built-in outlined Material icons (no icon package)
 - Widget tests that use the save go through `test/support/app_harness.dart`: the save is real file IO, so setup runs in `runAsync`, every later engine operation stays in the test zone, and `settle` pumps until `engine.isBusy` is false. Mixing the two zones deadlocks inside Hive
@@ -133,7 +134,8 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
 - `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
-- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet
+- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)
+- The tools are not `dart format` clean. Formatting them rewraps many untouched lines, so edit them without formatting
 - PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
 - Do not run `dart format` on the whole project: it reformats files that were not touched. Format the files you changed
 - Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
