@@ -71,7 +71,7 @@ flutter:
 - Responsive from day one: use `LayoutBuilder` and the three window classes in `lib/ui/layout.dart` (`Layout.windowClassOf`). Never write a breakpoint as an inline number; use `Layout.mediumBreakpoint` and `Layout.expandedBreakpoint`. No stretched phone screens:
   - Compact, below 600 px: phone layout, the selected page fills the screen, bottom navigation bar
   - Medium, 600 to 839 px: navigation rail, and the selected page fills the area beside it (the map too, when it is selected). No side panel
-  - Expanded, 840 px and above: navigation rail, the map in the main area, and the selected page in a detail side panel (half the space beside the rail, 320 to 400 px, narrowing so the map keeps at least 360 px). Choosing the map closes the panel
+  - Expanded, 840 px and above: navigation rail, the map in the main area, and the selected page in a detail side panel (half the space beside the rail, 320 to 400 px, narrowing so the map keeps at least 360 px). Choosing the map closes the panel. If the rail is so wide that a 320 px panel and a 360 px map do not both fit, show the medium content instead; never shrink either below its minimum
   - All three share one selection, so resizing a window keeps the open page. The header (company, cash, turbo) is on every page
 - Support mouse and keyboard on desktop: hover states, scroll wheel zoom on the map, right-click is optional
 - Notifications: Android only in the MVP. Hide the notification settings on platforms that do not support them

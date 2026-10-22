@@ -21,19 +21,37 @@ void main() {
     );
   });
 
-  test('the side panel takes half the area, within its min and max', () {
+  test('the map and the panel fit from 681 px beside the rail', () {
+    // 360 map + 1 divider + 320 panel.
+    expect(Layout.mapAndPanelFit(681), true);
+    expect(Layout.mapAndPanelFit(680.9), false);
+    expect(Layout.mapAndPanelFit(520), false);
+  });
+
+  test('the side panel takes half the area, up to its max', () {
     // 760 px beside the rail (a 840 px window, an 80 px rail): half of 759.
     expect(Layout.sidePanelWidth(760), 379.5);
-    expect(Layout.sidePanelWidth(520), Layout.sidePanelMinWidth);
     expect(Layout.sidePanelWidth(1840), Layout.sidePanelMaxWidth);
   });
 
-  test('the panel gives way so the map keeps its minimum', () {
+  test('where both fit, neither goes below its minimum', () {
     // 711 px beside a wide rail: half would leave the map 355 px.
     expect(Layout.sidePanelWidth(711), 350);
+    // At the edge both are exactly at their minimum.
+    expect(Layout.sidePanelWidth(681), Layout.sidePanelMinWidth);
     for (var area = 681.0; area <= 1200; area += 0.5) {
-      final map = area - Layout.dividerWidth - Layout.sidePanelWidth(area);
+      final panel = Layout.sidePanelWidth(area);
+      final map = area - Layout.dividerWidth - panel;
       expect(map, greaterThanOrEqualTo(Layout.mapMinWidth), reason: '$area');
+      expect(
+        panel,
+        inInclusiveRange(Layout.sidePanelMinWidth, Layout.sidePanelMaxWidth),
+        reason: '$area',
+      );
     }
+  });
+
+  test('asking for a panel where it does not fit is a bug', () {
+    expect(() => Layout.sidePanelWidth(680), throwsA(isA<AssertionError>()));
   });
 }

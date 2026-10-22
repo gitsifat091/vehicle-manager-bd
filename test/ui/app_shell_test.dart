@@ -230,6 +230,46 @@ void main() {
       );
     });
 
+    testWidgets('a rail too wide for map and panel falls back to medium', (
+      tester,
+    ) async {
+      const width = Layout.expandedBreakpoint;
+      await openAt(tester, const Size(width, 800));
+      expect(sidePanel, findsOneWidget);
+
+      // Large text widens the rail's labels until less than 681 px is left.
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pump();
+      expect(Layout.mapAndPanelFit(besideRail(tester, width)), false);
+      expect(rail, findsOneWidget);
+      expect(sidePanel, findsNothing);
+      expect(mapArea, findsNothing);
+      expect(selectedIndex(tester), ShellDestination.garage.index);
+      expect(
+        tester.getSize(find.byType(GarageScreen)).width,
+        besideRail(tester, width),
+      );
+      expect(tester.takeException(), isNull, reason: 'no overflow');
+
+      // The map selected fills the area, like the medium layout.
+      await tester.tap(inRail('Map'));
+      await tester.pump();
+      expect(tester.getSize(mapArea).width, besideRail(tester, width));
+
+      // Normal text again: map and panel are back, the selection kept.
+      await tester.tap(inRail('Garage'));
+      await tester.pump();
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+      await tester.pump();
+      expect(sidePanel, findsOneWidget);
+      expect(tester.getSize(mapArea).width, greaterThanOrEqualTo(360));
+      expect(
+        find.descendant(of: sidePanel, matching: find.byType(GarageScreen)),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('the map closes the panel, another place opens it', (
       tester,
     ) async {

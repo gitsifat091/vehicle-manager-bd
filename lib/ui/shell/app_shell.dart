@@ -22,7 +22,8 @@ enum ShellDestination { map, garage, finance, settings }
 /// - medium: a navigation rail replaces the bar and the selected page fills
 ///   the area beside it (the map too, when it is selected). No side panel
 /// - expanded: a rail, the map in the main area and the selected page in a
-///   side panel next to it. Choosing the map closes the panel
+///   side panel next to it. Choosing the map closes the panel. If a wide
+///   rail leaves no room for both, it falls back to the medium content
 ///
 /// All three share the header (company, cash, turbo) and the selection, so
 /// resizing a window across a breakpoint keeps the page.
@@ -106,21 +107,26 @@ class _AppShellState extends State<AppShell> {
 
   /// The expanded layout's area beside the rail: the map, and the selected
   /// page in a side panel unless the map itself is selected.
+  ///
+  /// When a wide rail leaves no room for both at their minimum widths, it
+  /// shows what the medium layout shows: the selected page alone.
   Widget _mapAndPanel(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, area) => Row(
-        children: [
-          Expanded(child: _page(context, ShellDestination.map)),
-          if (_selected != ShellDestination.map) ...[
-            const VerticalDivider(width: Layout.dividerWidth),
-            SizedBox(
-              key: AppShell.sidePanelKey,
-              width: Layout.sidePanelWidth(area.maxWidth),
-              child: _page(context, _selected),
+      builder: (context, area) => !Layout.mapAndPanelFit(area.maxWidth)
+          ? _page(context, _selected)
+          : Row(
+              children: [
+                Expanded(child: _page(context, ShellDestination.map)),
+                if (_selected != ShellDestination.map) ...[
+                  const VerticalDivider(width: Layout.dividerWidth),
+                  SizedBox(
+                    key: AppShell.sidePanelKey,
+                    width: Layout.sidePanelWidth(area.maxWidth),
+                    child: _page(context, _selected),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ],
-      ),
     );
   }
 

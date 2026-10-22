@@ -31,8 +31,7 @@ abstract final class Layout {
   /// The side panel stops growing here; the map takes the rest.
   static const double sidePanelMaxWidth = 400;
 
-  /// The side panel gives way so the map keeps at least this much, as long
-  /// as the panel can stay at [sidePanelMinWidth].
+  /// The map beside the side panel never gets narrower than this.
   static const double mapMinWidth = 360;
 
   /// Width of the line between the rail, the map and the panel.
@@ -45,20 +44,25 @@ abstract final class Layout {
     return WindowClass.expanded;
   }
 
-  /// Width of the side panel when the map, a divider and the panel share
-  /// [areaWidth] (the window without the rail): half of what the divider
-  /// leaves, but no more than leaves the map [mapMinWidth], and always within
-  /// the panel's min and max.
+  /// True when [areaWidth] (the window without the rail) holds the map at
+  /// [mapMinWidth], a divider and the side panel at [sidePanelMinWidth].
   ///
-  /// The map limit matters when the rail is wide (long labels, large text):
-  /// at the expanded breakpoint half the area can be less than 360 px.
+  /// Usually true from the expanded breakpoint up, but a wide rail (long
+  /// labels, large text) can leave less. Then the expanded layout shows the
+  /// medium content instead of shrinking the map or the panel.
+  static bool mapAndPanelFit(double areaWidth) =>
+      areaWidth >= mapMinWidth + dividerWidth + sidePanelMinWidth;
+
+  /// Width of the side panel when the map, a divider and the panel share
+  /// [areaWidth]: half of what the divider leaves, but no more than leaves
+  /// the map [mapMinWidth], and at most [sidePanelMaxWidth]. Only for an
+  /// area where [mapAndPanelFit], so it is never below [sidePanelMinWidth].
   static double sidePanelWidth(double areaWidth) {
+    assert(mapAndPanelFit(areaWidth), 'no room for the map and the panel');
     final shared = areaWidth - dividerWidth;
     final half = shared / 2;
     final leavingMapRoom = shared - mapMinWidth;
-    return (half < leavingMapRoom ? half : leavingMapRoom).clamp(
-      sidePanelMinWidth,
-      sidePanelMaxWidth,
-    );
+    final width = half < leavingMapRoom ? half : leavingMapRoom;
+    return width < sidePanelMaxWidth ? width : sidePanelMaxWidth;
   }
 }
