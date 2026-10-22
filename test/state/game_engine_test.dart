@@ -7,6 +7,7 @@ import 'package:vehicle_manager_bd/core/economy/trip_planner.dart';
 import 'package:vehicle_manager_bd/core/economy/unlock_rules.dart';
 import 'package:vehicle_manager_bd/core/sim/dispatch.dart';
 import 'package:vehicle_manager_bd/data/models/models.dart';
+import 'package:vehicle_manager_bd/data/repositories/change_committer.dart';
 import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
 import 'package:vehicle_manager_bd/state/game_engine.dart';
 
@@ -23,13 +24,18 @@ void main() {
   late String Function(String) ids;
   late GameEngine engine;
 
-  GameEngine makeEngine({EconomyConfig? config, int seed = 1}) {
+  GameEngine makeEngine({
+    EconomyConfig? config,
+    int seed = 1,
+    ChangeCommitter? committer,
+  }) {
     return GameEngine(
       config: config ?? quietConfig(),
       database: db,
       clock: clock,
       random: Random(seed),
       newId: ids,
+      committer: committer,
     );
   }
 
@@ -798,6 +804,106 @@ void main() {
       expect(db.company.load()!.cash, cash + 5000);
       restarted.dispose();
     });
+  });
+
+  group('a save that fails while the app keeps running', () {
+    // The commit throws once, right after [failAfter], like a disk error.
+    // The app does not restart: the next operation runs on the same engine.
+    CommitStep? failAfter;
+
+    setUp(() {
+      failAfter = null;
+      engine.dispose();
+      engine = makeEngine(
+        committer: ChangeCommitter(
+          db,
+          afterStep: (step) {
+            if (step == failAfter) {
+              failAfter = null;
+              throw StateError('disk error after ${step.name}');
+            }
+          },
+        ),
+      );
+    });
+
+    /// Every settled trip is paid once: cash, trip count, lifetime totals and
+    /// day rollups all agree with the trips on disk. [spent] is what was paid
+    /// for purchases.
+    void expectPaidOnce({int spent = 0}) {
+      final settled = db.trips.all().where((t) => t.settled).toList();
+      final company = db.company.load()!;
+      expect(company.completedTrips, settled.length, reason: 'trip count');
+      expect(
+        company.cash,
+        1500000 + settled.length * profitPerTrip - spent,
+        reason: 'cash',
+      );
+      expect(company.lifetimeProfit, settled.length * profitPerTrip);
+      expect(
+        db.dayRollups.all().fold<int>(0, (s, d) => s + d.trips),
+        settled.length,
+        reason: 'day rollups',
+      );
+      expect(db.pending.load(), isNull);
+    }
+
+    Future<void> sendStarterToWork() async {
+      await engine.startNewGame('Test Ltd');
+      await finishTurbo();
+      await engine.assignVehicle(
+        db.vehicles.all().single.id,
+        routeId: 'R01',
+        cargoName: 'General dry',
+      );
+    }
+
+    for (final step in CommitStep.values) {
+      test(
+        'a payout fails after ${step.name}: the next tick pays once',
+        () async {
+          await sendStarterToWork();
+          clock.advance(const Duration(seconds: 100));
+          failAfter = step;
+          await expectLater(engine.tick(), throwsStateError);
+
+          // Time moves on and the loop ticks again.
+          clock.advance(const Duration(seconds: 100));
+          await engine.tick();
+          expect(db.company.load()!.completedTrips, 2);
+          expectPaidOnce();
+        },
+      );
+
+      test(
+        'a payout fails after ${step.name}: a purchase comes next',
+        () async {
+          await sendStarterToWork();
+          clock.advance(const Duration(seconds: 100));
+          failAfter = step;
+          await expectLater(engine.tick(), throwsStateError);
+
+          expect((await engine.buyVehicle(2)).bought, true);
+          expectPaidOnce(spent: 150000);
+          expect(db.vehicles.count, 2);
+        },
+      );
+
+      test(
+        'a purchase fails after ${step.name}: the next one pays too',
+        () async {
+          await engine.startNewGame('Test Ltd');
+          failAfter = step;
+          await expectLater(engine.buyVehicle(2), throwsStateError);
+
+          expect((await engine.buyVehicle(2)).bought, true);
+          // Both vans are in the garage and both were paid for, once each.
+          expect(db.vehicles.byTier(2), hasLength(2));
+          expect(db.company.load()!.cash, 1500000 - 2 * 150000);
+          expect(db.pending.load(), isNull);
+        },
+      );
+    }
   });
 
   test('the sim quotes match the economy engine', () async {

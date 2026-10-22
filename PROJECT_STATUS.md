@@ -6,8 +6,8 @@ Last updated: 2026-10-22
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 499 tests pass, `flutter analyze` is clean. Economy config is version 0.4
-- Milestone 4 is in progress: steps 1 to 7 (and 5b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
+- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 523 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestone 4 is in progress: steps 1 to 7 (and 5b, 7b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
 - Next: step 8, engine: selling and the swap hint, trip pruning
 
@@ -38,6 +38,7 @@ Each step ends with `flutter analyze` and `flutter test` passing, and one commit
 | 5b | Medium layout: rail and full-width page from 600 to 840 px, map and side panel only from 840 px | Done |
 | 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | Done |
 | 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | Done |
+| 7b | Every engine operation finishes a half-written save before reading state (no double payment while the app keeps running) | Done |
 | 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | Next |
 | 9 | Garage screen and vehicle detail | |
 | 10 | Assign route and cargo (removes the temporary button) | |
@@ -67,7 +68,7 @@ Economy and balance
 Tech
 - Gradle wrapper stays on 8.14 (debug APK builds, checked 2026-10-22). Gradle 9.6 and up break the build with AGP 8.11.1, which uses a Gradle internal API removed in 9.6. Upgrade AGP before Gradle
 - Storage: hive_ce and hive_ce_flutter (original hive unmaintained since 2022), manual TypeAdapters, no build_runner
-- Crash safety: every save is a ChangeSet of absolute values, written first to the `pending_change` box, then applied, then cleared. Startup finishes any pending record
+- Crash safety: every save is a ChangeSet of absolute values, written first to the `pending_change` box, then applied, then cleared. Startup finishes any pending record, and so does every engine operation before it reads state (`GameEngine._serial`), so a commit that throws while the app keeps running is finished before anything is computed from the save. Tested for a payout and a purchase failing after every commit step
 - Game clock = real time since company creation + turbo bonus. The bonus is a pure function of `Company.turboElapsed` (`TurboSchedule.bonusAt`: 19, 9 and 4 extra minutes per foreground minute in the three phases, 640 minutes in total), so there is no new Company field. Game days and demand resets run on this clock and speed up with the turbo. Background time adds no bonus, so offline progress is unchanged
 - Because the bonus changes over time, a route's day cannot be recomputed from its timestamp. `RouteState.gameDay` (adapter field 3, optional) stores it; old saves without it fall back to the day of `updatedAt`
 - A wait for the next day is exact when the boundary is already past; a boundary still ahead is shortened by the current turbo speed, and an early wake-up just waits again
@@ -128,7 +129,6 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Route distances are approximate. Replace with real road distances (OSRM) during data prep
 - Meghna+Gumti and Paturia ferry tolls are partly estimated. Re-verify all tolls, diesel price and truck prices before release
 - The garage's "Start working" button (R01, General dry hardcoded) is temporary: the assign screen replaces it in step 10. Map, finance and settings are `ComingLater` placeholders until steps 12 to 14
-- Same-process commit failure: the engine loads the world, then `commit` finishes any pending record before writing. If a commit throws half way (a disk error) and the app keeps running, the next operation computes from the half-applied save and can pay the same trips twice. A restart is safe (`start` recovers first). Fix: call `recoverPending` before loading the world in every engine operation
 - `DayRollup` records are never pruned: one per game day with a settled trip, about 60 a real day at 1x (a few kB each day, all loaded by Hive). Decide in step 8, with trip pruning, whether to keep them all or cap them
 - Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
 - The pacing tool's bots buy no permits, so tiers 5 and up are never tested for pacing. Add permit buying to the bots when tier 5 and up matter (Milestone 5 or later)
@@ -139,6 +139,6 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
 - `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
 - `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
-- Do not run `dart format` on the whole project: it reformats files that were not touched. Format the files you changed
+- `lib`, `test` and `tool` are `dart format` clean, so formatting any file or the whole tree only changes what you edited
 - Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
 - Use high effort (`/effort`) for milestone work

@@ -20,7 +20,8 @@ import 'game_snapshot.dart';
 /// it forward, and saves the result through the [ChangeCommitter].
 ///
 /// Every operation runs one after another, so a timer tick and a player action
-/// never interleave their reads and writes.
+/// never interleave their reads and writes, and each starts by finishing any
+/// save left half written.
 class GameEngine extends ChangeNotifier {
   GameEngine({
     required this.config,
@@ -101,7 +102,7 @@ class GameEngine extends ChangeNotifier {
   /// foreground time, and catches up on everything that happened while away.
   /// Does nothing if there is no saved company yet.
   Future<void> start() => _serial(() async {
-    await _committer.recoverPending();
+    // _serial has already finished any save a crash interrupted.
     final saved = _db.company.load();
     if (saved == null) return;
     _turbo = TurboClock(
@@ -316,9 +317,18 @@ class GameEngine extends ChangeNotifier {
     }
   }
 
+  /// Queues [operation] behind the ones already running. Before it reads
+  /// anything, a save that an earlier operation left half written (a commit
+  /// that threw while the app kept running) is finished first. Otherwise the
+  /// operation would compute from a half-applied save, and committing its
+  /// result after the leftover could pay a trip twice or hand out a vehicle
+  /// for free.
   Future<T> _serial<T>(Future<T> Function() operation) {
     _pending++;
-    final result = _tail.then((_) => operation());
+    final result = _tail.then((_) async {
+      await _committer.recoverPending();
+      return operation();
+    });
     _tail = result.then<void>(
       (_) => _pending--,
       onError: (_) {
