@@ -216,6 +216,43 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get vehicleSellButton => 'Sell';
+
+  @override
+  String sellConfirmTitle(String vehicle) {
+    return 'Sell $vehicle?';
+  }
+
+  @override
+  String get sellConfirmYouGet => 'You get';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get closeButton => 'Close';
+
+  @override
+  String get sellRefusedTitle => 'Cannot sell now';
+
+  @override
+  String get sellRefusedOnTheRoad =>
+      'This vehicle is on a trip. Unassign it so it does not start another one. It can be sold once the trip ends.';
+
+  @override
+  String get sellRefusedOnLastTrip =>
+      'This vehicle is on its last trip. It can be sold once the trip ends.';
+
+  @override
+  String get sellRefusedLastVehicle =>
+      'This is your last vehicle. After the sale your cash would not buy another one, and the company would have nothing left to earn with.';
+
+  @override
+  String vehicleSoldMessage(String vehicle, String amount) {
+    return '$vehicle sold. You got $amount.';
+  }
+
+  @override
   String vehicleName(String tier) {
     String _temp0 = intl.Intl.selectLogic(tier, {
       'tier1': 'Sonar Van',

@@ -812,7 +812,31 @@ void main() {
 
     test('without a game selling is a programming error', () async {
       expect(() => engine.sellVehicle('v1'), throwsStateError);
+      expect(() => engine.previewSale('v1'), throwsStateError);
       expect(() => engine.unassignVehicle('v1'), throwsStateError);
+    });
+
+    test('previewSale gives the sale\'s answer and saves nothing', () async {
+      await engine.startNewGame('Test Ltd');
+      await finishTurbo();
+      final id = starterId();
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      expect(await engine.previewSale(id), isNull);
+      expect(db.vehicles.count, 1, reason: 'a preview sells nothing');
+      expect(db.company.load()!.cash, 1500000);
+      expect(heard, 0);
+
+      await engine.assignVehicle(id, routeId: 'R01', cargoName: 'General dry');
+      expect(
+        (await engine.previewSale(id))!.reason,
+        SaleRejectionReason.vehicleOnTheRoad,
+      );
+      expect(
+        (await engine.previewSale('nope'))!.reason,
+        SaleRejectionReason.notOwned,
+      );
     });
 
     test('a new game marks only its free vehicle as the starter', () async {
@@ -849,6 +873,10 @@ void main() {
       var heard = 0;
       engine.addListener(() => heard++);
 
+      expect(
+        (await engine.previewSale(onlyVehicle()))!.reason,
+        SaleRejectionReason.lastVehicleUnaffordable,
+      );
       final refused = await engine.sellVehicle(onlyVehicle());
 
       expect(refused!.reason, SaleRejectionReason.lastVehicleUnaffordable);

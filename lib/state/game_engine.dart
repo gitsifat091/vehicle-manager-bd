@@ -286,11 +286,41 @@ class GameEngine extends ChangeNotifier {
   /// Throws a [StateError] when there is no game.
   Future<SaleRejection?> sellVehicle(String vehicleId) => _serial(() async {
     final company = _requireCompany();
+    final check = _checkSale(company, vehicleId);
+    if (check.rejection != null) return check.rejection;
+
+    await _committer.commit(
+      ChangeSet(
+        cashAfter: check.cashAfter,
+        completedTripsAfter: company.completedTrips,
+        removedVehicleIds: [vehicleId],
+      ),
+    );
+    notifyListeners();
+    return null;
+  });
+
+  /// Why [sellVehicle] would refuse [vehicleId] right now, or null when it
+  /// would sell. Saves nothing, so the sell button can explain a refusal
+  /// before asking for confirmation. The sale itself checks again.
+  ///
+  /// Throws a [StateError] when there is no game.
+  Future<SaleRejection?> previewSale(String vehicleId) => _serial(() async {
+    return _checkSale(_requireCompany(), vehicleId).rejection;
+  });
+
+  ({SaleRejection? rejection, int cashAfter}) _checkSale(
+    Company company,
+    String vehicleId,
+  ) {
     final vehicle = _db.vehicles.get(vehicleId);
     if (vehicle == null) {
-      return SaleRejection(
-        SaleRejectionReason.notOwned,
-        'Vehicle $vehicleId is not in the garage.',
+      return (
+        rejection: SaleRejection(
+          SaleRejectionReason.notOwned,
+          'Vehicle $vehicleId is not in the garage.',
+        ),
+        cashAfter: company.cash,
       );
     }
     final cashAfter =
@@ -310,18 +340,8 @@ class GameEngine extends ChangeNotifier {
         ownedPermits: company.permits,
       ),
     );
-    if (rejection != null) return rejection;
-
-    await _committer.commit(
-      ChangeSet(
-        cashAfter: cashAfter,
-        completedTripsAfter: company.completedTrips,
-        removedVehicleIds: [vehicleId],
-      ),
-    );
-    notifyListeners();
-    return null;
-  });
+    return (rejection: rejection, cashAfter: cashAfter);
+  }
 
   Company _requireCompany() {
     final company = _db.company.load();

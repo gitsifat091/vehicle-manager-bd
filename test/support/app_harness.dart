@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:vehicle_manager_bd/app.dart';
+import 'package:vehicle_manager_bd/core/config/economy_config.dart';
 import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
 import 'package:vehicle_manager_bd/state/app_settings.dart';
 import 'package:vehicle_manager_bd/state/game_engine.dart';
@@ -22,10 +23,13 @@ import 'sim_support.dart';
 ///
 /// Call [open] first, then [pump].
 class AppHarness {
+  /// [config] defaults to the default config with accidents off.
+  AppHarness({EconomyConfig? config}) : config = config ?? quietConfig();
+
   final clock = ManualClock();
 
-  /// The default config with accidents off, so trip money is exact.
-  final config = quietConfig();
+  /// Accidents are off by default, so trip money is exact.
+  final EconomyConfig config;
   late Directory dir;
   late SaveDatabase db;
   late AppSettings settings;

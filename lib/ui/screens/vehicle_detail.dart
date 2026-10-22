@@ -11,11 +11,13 @@ import '../layout.dart';
 import '../theme/app_theme.dart';
 import '../theme/game_colors.dart';
 import '../theme/lal_sabuj_tokens.dart';
+import '../widgets/sell_flow.dart';
 import '../widgets/vehicle_info.dart';
 
 /// One vehicle in full: status and trip progress, route and cargo, the money
-/// of the trip on the road, expected profit per hour, what it sells for, its
-/// recent trips and its specs from the config.
+/// of the trip on the road, expected profit per hour, what it sells for (with
+/// the sell button, `sellWithConfirmation`), its recent trips and its specs
+/// from the config.
 ///
 /// Shown by the garage in place of the list, so it sits wherever the garage
 /// page is: the whole page area on a phone or a medium window, the side
@@ -105,6 +107,12 @@ class VehicleDetail extends StatelessWidget {
                     ),
                   ),
                   style: GameText.money(context),
+                ),
+                const SizedBox(height: Space.s2),
+                OutlinedButton(
+                  style: AppButtons.danger(context),
+                  onPressed: () => sellWithConfirmation(context, vehicle),
+                  child: Text(l10n.vehicleSellButton),
                 ),
               ],
             ),

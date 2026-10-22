@@ -216,6 +216,43 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String get vehicleSellButton => 'বিক্রি করুন';
+
+  @override
+  String sellConfirmTitle(String vehicle) {
+    return '$vehicle বিক্রি করবেন?';
+  }
+
+  @override
+  String get sellConfirmYouGet => 'আপনি পাবেন';
+
+  @override
+  String get cancelButton => 'বাতিল';
+
+  @override
+  String get closeButton => 'বন্ধ করুন';
+
+  @override
+  String get sellRefusedTitle => 'এখন বিক্রি করা যাবে না';
+
+  @override
+  String get sellRefusedOnTheRoad =>
+      'যানবাহনটি এখন যাত্রায় আছে। কাজ থেকে সরিয়ে দিন, যাতে আর নতুন যাত্রা শুরু না করে। যাত্রা শেষ হলে বিক্রি করা যাবে।';
+
+  @override
+  String get sellRefusedOnLastTrip =>
+      'যানবাহনটি তার শেষ যাত্রায় আছে। যাত্রা শেষ হলে বিক্রি করা যাবে।';
+
+  @override
+  String get sellRefusedLastVehicle =>
+      'এটি আপনার শেষ যানবাহন। বিক্রির পরে আপনার টাকায় আরেকটি কেনা যাবে না, তখন কোম্পানির আয়ের কোনো উপায় থাকবে না।';
+
+  @override
+  String vehicleSoldMessage(String vehicle, String amount) {
+    return '$vehicle বিক্রি হয়েছে। আপনি পেয়েছেন $amount।';
+  }
+
+  @override
   String vehicleName(String tier) {
     String _temp0 = intl.Intl.selectLogic(tier, {
       'tier1': 'সোনার ভ্যান',

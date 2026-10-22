@@ -341,6 +341,63 @@
     }
   },
 
+  "vehicleSellButton": "Sell",
+  "@vehicleSellButton": {
+    "description": "Button that sells a vehicle, in the vehicle detail and in the confirmation dialog."
+  },
+
+  "sellConfirmTitle": "Sell {vehicle}?",
+  "@sellConfirmTitle": {
+    "description": "Title of the dialog that confirms a sale. The vehicle name is already translated.",
+    "placeholders": {
+      "vehicle": {"type": "String"}
+    }
+  },
+
+  "sellConfirmYouGet": "You get",
+  "@sellConfirmYouGet": {
+    "description": "Label above the amount a sale pays, in the confirmation dialog."
+  },
+
+  "cancelButton": "Cancel",
+  "@cancelButton": {
+    "description": "Button that closes a dialog without doing anything."
+  },
+
+  "closeButton": "Close",
+  "@closeButton": {
+    "description": "Button that closes a dialog that only explains something."
+  },
+
+  "sellRefusedTitle": "Cannot sell now",
+  "@sellRefusedTitle": {
+    "description": "Title of the dialog that explains why a vehicle cannot be sold."
+  },
+
+  "sellRefusedOnTheRoad": "This vehicle is on a trip. Unassign it so it does not start another one. It can be sold once the trip ends.",
+  "@sellRefusedOnTheRoad": {
+    "description": "A vehicle on the road cannot be sold. Shown with a button to unassign it."
+  },
+
+  "sellRefusedOnLastTrip": "This vehicle is on its last trip. It can be sold once the trip ends.",
+  "@sellRefusedOnLastTrip": {
+    "description": "A vehicle that was already unassigned is still finishing its trip, so it cannot be sold yet."
+  },
+
+  "sellRefusedLastVehicle": "This is your last vehicle. After the sale your cash would not buy another one, and the company would have nothing left to earn with.",
+  "@sellRefusedLastVehicle": {
+    "description": "The company's last vehicle cannot be sold when the cash after the sale would not buy the cheapest vehicle."
+  },
+
+  "vehicleSoldMessage": "{vehicle} sold. You got {amount}.",
+  "@vehicleSoldMessage": {
+    "description": "Short message after a sale. The vehicle name is translated and the amount is already formatted as money.",
+    "placeholders": {
+      "vehicle": {"type": "String"},
+      "amount": {"type": "String"}
+    }
+  },
+
   "vehicleName": "{tier, select, tier1{Sonar Van} tier2{Bijli Cargo} tier3{Tuntuni Mini} tier4{Sathi Plus} tier5{Meghna 14} tier6{Jamuna Open} tier7{Karnaphuli 20} tier8{Himaloy Reefer} tier9{Pahari Tipper} tier10{Telrani} tier11{Bongo Mover 40} tier12{Hati Lowbed} other{Vehicle}}",
   "@vehicleName": {
     "description": "The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.",

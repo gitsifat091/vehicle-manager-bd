@@ -452,6 +452,66 @@ abstract class AppLocalizations {
   /// **'Tk {amount} per km'**
   String perKmValue(String amount);
 
+  /// Button that sells a vehicle, in the vehicle detail and in the confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get vehicleSellButton;
+
+  /// Title of the dialog that confirms a sale. The vehicle name is already translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell {vehicle}?'**
+  String sellConfirmTitle(String vehicle);
+
+  /// Label above the amount a sale pays, in the confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'You get'**
+  String get sellConfirmYouGet;
+
+  /// Button that closes a dialog without doing anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// Button that closes a dialog that only explains something.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeButton;
+
+  /// Title of the dialog that explains why a vehicle cannot be sold.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot sell now'**
+  String get sellRefusedTitle;
+
+  /// A vehicle on the road cannot be sold. Shown with a button to unassign it.
+  ///
+  /// In en, this message translates to:
+  /// **'This vehicle is on a trip. Unassign it so it does not start another one. It can be sold once the trip ends.'**
+  String get sellRefusedOnTheRoad;
+
+  /// A vehicle that was already unassigned is still finishing its trip, so it cannot be sold yet.
+  ///
+  /// In en, this message translates to:
+  /// **'This vehicle is on its last trip. It can be sold once the trip ends.'**
+  String get sellRefusedOnLastTrip;
+
+  /// The company's last vehicle cannot be sold when the cash after the sale would not buy the cheapest vehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your last vehicle. After the sale your cash would not buy another one, and the company would have nothing left to earn with.'**
+  String get sellRefusedLastVehicle;
+
+  /// Short message after a sale. The vehicle name is translated and the amount is already formatted as money.
+  ///
+  /// In en, this message translates to:
+  /// **'{vehicle} sold. You got {amount}.'**
+  String vehicleSoldMessage(String vehicle, String amount);
+
   /// The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.
   ///
   /// In en, this message translates to:
