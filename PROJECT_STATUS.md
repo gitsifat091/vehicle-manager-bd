@@ -9,7 +9,6 @@ Last updated: 2026-10-22
 - Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 437 tests pass, `flutter analyze` is clean. Economy config is version 0.4
 - Milestone 4 is in progress: steps 1 to 5 and 5b are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
-- The Android debug build fails with the uncommitted Gradle 9.7.1 wrapper: AGP 8.11.1 uses a Gradle internal API removed in Gradle 9.6. Settle the wrapper before step 6
 - Next: step 6, `route_economics.dart` in core
 
 ## Milestones
@@ -66,6 +65,7 @@ Economy and balance
 - Permits are one-time Taka purchases, never a premium currency (matches the no-paywall design rule). Confirmed prices: light Tk 4 lakh, medium Tk 5 lakh, cold chain Tk 7 lakh, hazmat Tk 8 lakh, heavy Tk 10 lakh (Tk 34 lakh in total). Each is about 15 to 17 percent of the cheapest vehicle it unlocks; on the sheet's typical routes that adds 1.9 to 5.5 real hours of payback at 1x and keeps every vehicle inside its target range (Operating Permits sheet, columns G to I)
 
 Tech
+- Gradle wrapper stays on 8.14 (debug APK builds, checked 2026-10-22). Gradle 9.6 and up break the build with AGP 8.11.1, which uses a Gradle internal API removed in 9.6. Upgrade AGP before Gradle
 - Storage: hive_ce and hive_ce_flutter (original hive unmaintained since 2022), manual TypeAdapters, no build_runner
 - Crash safety: every save is a ChangeSet of absolute values, written first to the `pending_change` box, then applied, then cleared. Startup finishes any pending record
 - Game clock = real time since company creation + turbo bonus. The bonus is a pure function of `Company.turboElapsed` (`TurboSchedule.bonusAt`: 19, 9 and 4 extra minutes per foreground minute in the three phases, 640 minutes in total), so there is no new Company field. Game days and demand resets run on this clock and speed up with the turbo. Background time adds no bonus, so offline progress is unchanged
