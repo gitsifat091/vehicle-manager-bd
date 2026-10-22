@@ -134,9 +134,7 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
 - `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
-- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)
-- The tools are not `dart format` clean. Formatting them rewraps many untouched lines, so edit them without formatting
-- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
+- `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
 - Do not run `dart format` on the whole project: it reformats files that were not touched. Format the files you changed
 - Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
 - Use high effort (`/effort`) for milestone work
