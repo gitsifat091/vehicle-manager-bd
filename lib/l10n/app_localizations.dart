@@ -104,23 +104,47 @@ abstract class AppLocalizations {
   /// **'Vehicle Manager Bangladesh'**
   String get appTitle;
 
-  /// Text on the home screen when no company exists. Normally the new-game screen is shown instead.
+  /// Navigation item that opens the map of Bangladesh with the routes.
   ///
   /// In en, this message translates to:
-  /// **'No game yet'**
-  String get noGameYet;
+  /// **'Map'**
+  String get navMap;
 
-  /// The company's cash. The amount is already formatted as money.
+  /// Navigation item that opens the list of the player's vehicles.
+  ///
+  /// In en, this message translates to:
+  /// **'Garage'**
+  String get navGarage;
+
+  /// Navigation item that opens income, costs and profit.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get navFinance;
+
+  /// Navigation item that opens language, theme and new game.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get navSettings;
+
+  /// Placeholder text on a screen that is not built yet.
+  ///
+  /// In en, this message translates to:
+  /// **'This screen comes in a later update.'**
+  String get comingLater;
+
+  /// The company's cash, shown under the company name at the top of every screen. The amount is already formatted as money.
   ///
   /// In en, this message translates to:
   /// **'Cash: {amount}'**
   String cashLine(String amount);
 
-  /// How many times faster than normal the game runs during Turbo Start. The speed is already formatted.
+  /// Small badge at the top of the screen during Turbo Start: how many times faster than normal the game runs. The speed is already formatted.
   ///
   /// In en, this message translates to:
-  /// **'Turbo Start speed: {speed} times'**
-  String turboLine(String speed);
+  /// **'Turbo {speed}x'**
+  String turboBadge(String speed);
 
   /// Heading of the new-game screen.
   ///
@@ -162,7 +186,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Vehicles'**
-  String get homeVehiclesTitle;
+  String get garageVehiclesTitle;
 
   /// How many of the garage's vehicle slots are taken. Both numbers are already formatted.
   ///
@@ -212,7 +236,7 @@ abstract class AppLocalizations {
   /// **'Goes again in {time}'**
   String vehicleDepartsIn(String time);
 
-  /// Temporary button on the placeholder home screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists.
+  /// Temporary button on the garage screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists.
   ///
   /// In en, this message translates to:
   /// **'Start working (temporary)'**

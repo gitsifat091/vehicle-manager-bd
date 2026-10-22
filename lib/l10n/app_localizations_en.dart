@@ -12,7 +12,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Vehicle Manager Bangladesh';
 
   @override
-  String get noGameYet => 'No game yet';
+  String get navMap => 'Map';
+
+  @override
+  String get navGarage => 'Garage';
+
+  @override
+  String get navFinance => 'Finance';
+
+  @override
+  String get navSettings => 'Settings';
+
+  @override
+  String get comingLater => 'This screen comes in a later update.';
 
   @override
   String cashLine(String amount) {
@@ -20,8 +32,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String turboLine(String speed) {
-    return 'Turbo Start speed: $speed times';
+  String turboBadge(String speed) {
+    return 'Turbo ${speed}x';
   }
 
   @override
@@ -45,7 +57,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startGameButton => 'Start';
 
   @override
-  String get homeVehiclesTitle => 'Vehicles';
+  String get garageVehiclesTitle => 'Vehicles';
 
   @override
   String garageSlotsLine(String used, String total) {

@@ -9,8 +9,8 @@ import 'state/app_settings.dart';
 import 'state/game_engine.dart';
 import 'state/game_loop.dart';
 import 'state/ui_clock.dart';
-import 'ui/screens/home_screen.dart';
 import 'ui/screens/new_game_screen.dart';
+import 'ui/shell/app_shell.dart';
 import 'ui/theme/app_theme.dart';
 
 /// The app root. It owns the [GameLoop] (ticks while the widget lives) and
@@ -88,13 +88,13 @@ class _VehicleManagerAppState extends State<VehicleManagerApp> {
 }
 
 /// Chooses the first screen: the new-game screen until a company exists, then
-/// the home screen.
+/// the shell with its pages.
 class AppHome extends StatelessWidget {
   const AppHome({super.key});
 
   @override
   Widget build(BuildContext context) {
     final hasGame = context.select((GameEngine e) => e.snapshot.hasGame);
-    return hasGame ? const HomeScreen() : const NewGameScreen();
+    return hasGame ? const AppShell() : const NewGameScreen();
   }
 }

@@ -27,7 +27,7 @@ void main() {
 
     expect(find.text('Sifat Ltd'), findsOneWidget);
     expect(find.text('Cash: Tk 15,00,000'), findsOneWidget);
-    expect(find.text('Turbo Start speed: 20 times'), findsOneWidget);
+    expect(find.text('Turbo 20x'), findsOneWidget);
     expect(find.text('Vehicles'), findsOneWidget);
     expect(find.text('1 of 6 garage slots used'), findsOneWidget);
   });

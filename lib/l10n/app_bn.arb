@@ -3,11 +3,19 @@
 
   "appTitle": "ভেহিকেল ম্যানেজার বাংলাদেশ",
 
-  "noGameYet": "এখনো কোনো খেলা শুরু হয়নি",
+  "navMap": "মানচিত্র",
+
+  "navGarage": "গ্যারেজ",
+
+  "navFinance": "হিসাব",
+
+  "navSettings": "সেটিংস",
+
+  "comingLater": "এই পাতাটি পরের কোনো আপডেটে আসবে।",
 
   "cashLine": "নগদ: {amount}",
 
-  "turboLine": "টার্বো স্টার্টের গতি: {speed} গুণ",
+  "turboBadge": "টার্বো {speed} গুণ",
 
   "newGameTitle": "আপনার কোম্পানি শুরু করুন",
 
@@ -21,7 +29,7 @@
 
   "startGameButton": "শুরু করুন",
 
-  "homeVehiclesTitle": "যানবাহন",
+  "garageVehiclesTitle": "যানবাহন",
 
   "garageSlotsLine": "গ্যারেজের {total}টি জায়গার মধ্যে {used}টি ভরা",
 

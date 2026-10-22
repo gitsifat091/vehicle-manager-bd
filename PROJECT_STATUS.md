@@ -2,14 +2,14 @@
 
 Read this after CLAUDE.md at the start of every session. CLAUDE.md says how to build; this file says where things stand. Update it at the end of every milestone or when a decision is made. Keep it short: replace old status, do not append a diary.
 
-Last updated: 2026-10-21
+Last updated: 2026-10-22
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 409 tests pass, `flutter analyze` is clean. Economy config is version 0.4
-- Milestone 4 is in progress: steps 1, 2, 4 and 3 are done (see the step list below). The app runs: new-game screen, then a temporary home screen with cash, turbo speed and a read-only vehicle list with a temporary "Start working" button
+- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 423 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestone 4 is in progress: steps 1 to 5 are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
-- Next: step 5, the responsive shell
+- Next: step 6, `route_economics.dart` in core
 
 ## Milestones
 
@@ -34,8 +34,8 @@ Each step ends with `flutter analyze` and `flutter test` passing, and one commit
 | 2 | Read model `GameEngine.snapshot`, `vehicleActivity`, `UiClock` (one second) | Done |
 | 4 | ARB (en, bn), `Formats` (lakh and crore, Bangla digits), `AppSettings` (language, theme) in a device settings box | Done |
 | 3 | `settings.starterVehicleTier`, free starter vehicle, new-game screen, read-only vehicle list on the temporary home | Done |
-| 5 | Responsive shell: bottom bar under 600 px, rail and detail panel from 600 px | Next |
-| 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | |
+| 5 | Responsive shell: bottom bar under 600 px, rail and detail panel from 600 px | Done |
+| 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | Next |
 | 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | |
 | 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | |
 | 9 | Garage screen and vehicle detail | |
@@ -78,6 +78,7 @@ Milestone 4
 - `settings.starterVehicleTier` = 4 (sheet: Settings row 29). The starter is granted by `startNewGame`, unassigned. The company is written last, so a half-made game looks like no game
 - No new packages: plain Navigator, no go_router. The map layout goes in `assets/config/map_layout.json`, not in `economy.json` (it is not economy data)
 - The overload slider stays out of M4 (assign uses 0 overload). Trip history: keep the last 500 settled trips, plus lifetime totals on `Company` and a per-game-day rollup (revenue, costs, trips) for the finance screen, both updated inside the settlement `ChangeSet`; pruning only deletes trips that are already counted
+- Shell (`lib/ui/shell/app_shell.dart`): four places, Map, Garage, Finance, Settings (`ShellDestination`). Under 600 px the page fills the body with a bottom bar. From 600 px a rail, the map always in the main area, and the selected page in a side panel: half the area beside the rail, clamped to 320 to 400 px (`Layout.sidePanelWidth`). Choosing Map closes the panel. One selection for both layouts, so a resize keeps the page. The header on every page shows company, cash and a turbo badge (only while the speed is above 1). The start page is the garage until the map is built in step 12. Pages have no Scaffold of their own. Icons are Flutter's built-in outlined Material icons (no icon package)
 - Widget tests that use the save go through `test/support/app_harness.dart`: the save is real file IO, so setup runs in `runAsync`, every later engine operation stays in the test zone, and `settle` pumps until `engine.isBusy` is false. Mixing the two zones deadlocks inside Hive
 
 Product
@@ -121,7 +122,8 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - The sheet's First Hour tab ignores demand and the garage cap. `tool/first_hours_sim.dart` is the pacing check until the sheet is updated
 - Route distances are approximate. Replace with real road distances (OSRM) during data prep
 - Meghna+Gumti and Paturia ferry tolls are partly estimated. Re-verify all tolls, diesel price and truck prices before release
-- The home screen and its "Start working" button (R01, General dry hardcoded) are temporary: the shell replaces the screen in step 5 and the assign screen replaces the button in step 10
+- The garage's "Start working" button (R01, General dry hardcoded) is temporary: the assign screen replaces it in step 10. Map, finance and settings are `ComingLater` placeholders until steps 12 to 14
+- At exactly 600 px wide the map gets only about 200 px beside the rail and a 320 px panel. Check it on a real small tablet in step 15
 - `Company.permits` (adapter field 5, optional, default empty) exists, but a permit purchase is not yet part of `ChangeSet`. Add `permitsAfter` to `ChangeSet` with the buy screen (Milestone 4), so buying a permit is crash safe like every other save. Committing a change already keeps the owned permits
 - Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
 - The pacing tool's bots buy no permits, so tiers 5 and up are never tested for pacing. Add permit buying to the bots when tier 5 and up matter (Milestone 5 or later)

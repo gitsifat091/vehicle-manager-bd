@@ -6,8 +6,8 @@ import 'package:vehicle_manager_bd/core/config/economy_config.dart';
 import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
 import 'package:vehicle_manager_bd/state/app_settings.dart';
 import 'package:vehicle_manager_bd/state/game_engine.dart';
-import 'package:vehicle_manager_bd/ui/screens/home_screen.dart';
 import 'package:vehicle_manager_bd/ui/screens/new_game_screen.dart';
+import 'package:vehicle_manager_bd/ui/shell/app_shell.dart';
 
 import 'core/test_config.dart';
 import 'data/save_test_helper.dart';
@@ -74,26 +74,29 @@ void main() {
     final engine = await engineWithGame(tester, 'Sifat Ltd');
     await tester.pumpWidget(app(engine));
 
-    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
     expect(find.text('Sifat Ltd'), findsOneWidget);
     expect(find.text('Cash: Tk 15,00,000'), findsOneWidget);
-    expect(find.text('Turbo Start speed: 20 times'), findsOneWidget);
-    expect(find.text('Vehicle Manager Bangladesh'), findsOneWidget);
+    expect(find.text('Turbo 20x'), findsOneWidget);
+    expect(
+      tester.widget<Title>(find.byType(Title)).title,
+      'Vehicle Manager Bangladesh',
+    );
   });
 
-  testWidgets('the turbo line follows the clock through the UI clock', (
+  testWidgets('the turbo badge follows the clock through the UI clock', (
     tester,
   ) async {
     final clock = ManualClock();
     final engine = await engineWithGame(tester, 'A', clock: clock);
     await tester.pumpWidget(app(engine));
-    expect(find.text('Turbo Start speed: 20 times'), findsOneWidget);
+    expect(find.text('Turbo 20x'), findsOneWidget);
 
     // 20 minutes of foreground play moves the turbo to its second phase. The
     // screen notices on the next UI clock second, with no game change.
     clock.advance(const Duration(minutes: 20));
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Turbo Start speed: 10 times'), findsOneWidget);
+    expect(find.text('Turbo 10x'), findsOneWidget);
   });
 
   testWidgets('without a game the new-game screen is shown', (tester) async {
@@ -109,7 +112,7 @@ void main() {
     addTearDown(engine.dispose);
     await tester.pumpWidget(app(engine));
     expect(find.byType(NewGameScreen), findsOneWidget);
-    expect(find.byType(HomeScreen), findsNothing);
+    expect(find.byType(AppShell), findsNothing);
     expect(find.text('Start your company'), findsOneWidget);
   });
 
@@ -130,7 +133,7 @@ void main() {
     final engine = await engineWithGame(tester, 'A');
     await tester.pumpWidget(app(engine));
 
-    final context = tester.element(find.byType(HomeScreen));
+    final context = tester.element(find.byType(AppShell));
     expect(Provider.of<GameEngine>(context, listen: false), same(engine));
     expect(Provider.of<EconomyConfig>(context, listen: false), same(config));
     expect(Provider.of<AppSettings>(context, listen: false), same(settings));
@@ -143,8 +146,11 @@ void main() {
       await tester.pumpWidget(app(engine));
 
       expect(find.text('নগদ: ৳ ১৫,০০,০০০'), findsOneWidget);
-      expect(find.text('টার্বো স্টার্টের গতি: ২০ গুণ'), findsOneWidget);
-      expect(find.text('ভেহিকেল ম্যানেজার বাংলাদেশ'), findsOneWidget);
+      expect(find.text('টার্বো ২০ গুণ'), findsOneWidget);
+      expect(
+        tester.widget<Title>(find.byType(Title)).title,
+        'ভেহিকেল ম্যানেজার বাংলাদেশ',
+      );
     });
 
     testWidgets('changing the language redraws at once', (tester) async {

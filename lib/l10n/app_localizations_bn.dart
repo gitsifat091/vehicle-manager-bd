@@ -12,7 +12,19 @@ class AppLocalizationsBn extends AppLocalizations {
   String get appTitle => 'ভেহিকেল ম্যানেজার বাংলাদেশ';
 
   @override
-  String get noGameYet => 'এখনো কোনো খেলা শুরু হয়নি';
+  String get navMap => 'মানচিত্র';
+
+  @override
+  String get navGarage => 'গ্যারেজ';
+
+  @override
+  String get navFinance => 'হিসাব';
+
+  @override
+  String get navSettings => 'সেটিংস';
+
+  @override
+  String get comingLater => 'এই পাতাটি পরের কোনো আপডেটে আসবে।';
 
   @override
   String cashLine(String amount) {
@@ -20,8 +32,8 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String turboLine(String speed) {
-    return 'টার্বো স্টার্টের গতি: $speed গুণ';
+  String turboBadge(String speed) {
+    return 'টার্বো $speed গুণ';
   }
 
   @override
@@ -45,7 +57,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get startGameButton => 'শুরু করুন';
 
   @override
-  String get homeVehiclesTitle => 'যানবাহন';
+  String get garageVehiclesTitle => 'যানবাহন';
 
   @override
   String garageSlotsLine(String used, String total) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vehicle_manager_bd/ui/screens/home_screen.dart';
 import 'package:vehicle_manager_bd/ui/screens/new_game_screen.dart';
+import 'package:vehicle_manager_bd/ui/shell/app_shell.dart';
 
 import '../support/app_harness.dart';
 
@@ -45,9 +45,7 @@ void main() {
     expect(h.engine.company, isNull, reason: 'no game was started');
   });
 
-  testWidgets('Start creates the company and opens the home screen', (
-    tester,
-  ) async {
+  testWidgets('Start creates the company and opens the shell', (tester) async {
     await h.open(tester);
     await h.pump(tester);
 
@@ -55,7 +53,7 @@ void main() {
     await tester.tap(find.text('Start'));
     await h.settle(tester);
 
-    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
     expect(find.byType(NewGameScreen), findsNothing);
     expect(find.text('Padma Transport'), findsOneWidget);
     expect(h.engine.company!.name, 'Padma Transport', reason: 'trimmed');
@@ -71,7 +69,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Keyboard Ltd');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await h.settle(tester);
-    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
   });
 
   testWidgets('the name field stops at 30 characters', (tester) async {
@@ -107,7 +105,7 @@ void main() {
     await h.open(tester, company: 'Saved Ltd');
     await h.pump(tester);
     expect(find.byType(NewGameScreen), findsNothing);
-    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
   });
 
   testWidgets('the start button is at least 44 px tall', (tester) async {

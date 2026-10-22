@@ -6,22 +6,42 @@
     "description": "The name of the app, shown in the title bar and the task switcher."
   },
 
-  "noGameYet": "No game yet",
-  "@noGameYet": {
-    "description": "Text on the home screen when no company exists. Normally the new-game screen is shown instead."
+  "navMap": "Map",
+  "@navMap": {
+    "description": "Navigation item that opens the map of Bangladesh with the routes."
+  },
+
+  "navGarage": "Garage",
+  "@navGarage": {
+    "description": "Navigation item that opens the list of the player's vehicles."
+  },
+
+  "navFinance": "Finance",
+  "@navFinance": {
+    "description": "Navigation item that opens income, costs and profit."
+  },
+
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Navigation item that opens language, theme and new game."
+  },
+
+  "comingLater": "This screen comes in a later update.",
+  "@comingLater": {
+    "description": "Placeholder text on a screen that is not built yet."
   },
 
   "cashLine": "Cash: {amount}",
   "@cashLine": {
-    "description": "The company's cash. The amount is already formatted as money.",
+    "description": "The company's cash, shown under the company name at the top of every screen. The amount is already formatted as money.",
     "placeholders": {
       "amount": {"type": "String"}
     }
   },
 
-  "turboLine": "Turbo Start speed: {speed} times",
-  "@turboLine": {
-    "description": "How many times faster than normal the game runs during Turbo Start. The speed is already formatted.",
+  "turboBadge": "Turbo {speed}x",
+  "@turboBadge": {
+    "description": "Small badge at the top of the screen during Turbo Start: how many times faster than normal the game runs. The speed is already formatted.",
     "placeholders": {
       "speed": {"type": "String"}
     }
@@ -61,8 +81,8 @@
     "description": "Button that creates the company and begins the game."
   },
 
-  "homeVehiclesTitle": "Vehicles",
-  "@homeVehiclesTitle": {
+  "garageVehiclesTitle": "Vehicles",
+  "@garageVehiclesTitle": {
     "description": "Heading of the list of the player's vehicles."
   },
 
@@ -122,7 +142,7 @@
 
   "tempStartWorking": "Start working (temporary)",
   "@tempStartWorking": {
-    "description": "Temporary button on the placeholder home screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists."
+    "description": "Temporary button on the garage screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists."
   },
 
   "vehicleName": "{tier, select, tier1{Sonar Van} tier2{Bijli Cargo} tier3{Tuntuni Mini} tier4{Sathi Plus} tier5{Meghna 14} tier6{Jamuna Open} tier7{Karnaphuli 20} tier8{Himaloy Reefer} tier9{Pahari Tipper} tier10{Telrani} tier11{Bongo Mover 40} tier12{Hati Lowbed} other{Vehicle}}",
