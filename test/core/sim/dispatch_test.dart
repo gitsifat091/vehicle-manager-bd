@@ -275,10 +275,7 @@ void main() {
       );
       // The game clock reads 100 of 120 minutes: 20 game minutes left, which
       // is one real minute at 20x (24 real minutes at 1x).
-      expect(
-        (p as DispatchWaiting).until,
-        now.add(const Duration(minutes: 1)),
-      );
+      expect((p as DispatchWaiting).until, now.add(const Duration(minutes: 1)));
     });
 
     test('a save without a day number uses the day of its timestamp', () {

@@ -61,10 +61,7 @@ void main() {
         (j) => j['settings']['resaleShareOfPrice'] = 0.333,
       );
       expect(
-        resaleValueTk(
-          settings: odd.settings,
-          vehicle: odd.vehicleByTier(1),
-        ),
+        resaleValueTk(settings: odd.settings, vehicle: odd.vehicleByTier(1)),
         6660,
       );
     });
@@ -170,7 +167,8 @@ void main() {
           route: config.routeById('R01'),
           cargo: config.cargoByName('Parcels'),
         );
-        return q.profit / (q.tripGameHours / config.settings.gameMinutesPerRealMinute);
+        return q.profit /
+            (q.tripGameHours / config.settings.gameMinutesPerRealMinute);
       }
 
       final bijliHour = perHour(2);

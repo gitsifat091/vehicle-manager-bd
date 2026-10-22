@@ -25,7 +25,9 @@ void main() {
     });
 
     test('every other tier is locked at the start', () {
-      for (final v in config.vehicles.where((v) => ![1, 2, 4].contains(v.tier))) {
+      for (final v in config.vehicles.where(
+        (v) => ![1, 2, 4].contains(v.tier),
+      )) {
         expect(v.availableAtStart, false, reason: 'tier ${v.tier}');
         expect(check(v.tier), isNotNull, reason: 'tier ${v.tier}');
       }

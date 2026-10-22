@@ -11,11 +11,7 @@ class RouteState {
   }) : updatedAt = updatedAt.toUtc();
 
   /// A route with its full daily demand, in game day [gameDay].
-  factory RouteState.initial(
-    RouteSpec route,
-    DateTime now, {
-    int? gameDay,
-  }) {
+  factory RouteState.initial(RouteSpec route, DateTime now, {int? gameDay}) {
     return RouteState(
       routeId: route.id,
       demandRemainingT: route.dailyDemandT,
@@ -60,7 +56,8 @@ class RouteState {
       other.gameDay == gameDay;
 
   @override
-  int get hashCode => Object.hash(routeId, demandRemainingT, updatedAt, gameDay);
+  int get hashCode =>
+      Object.hash(routeId, demandRemainingT, updatedAt, gameDay);
 
   @override
   String toString() => 'RouteState($routeId, demand: $demandRemainingT t)';

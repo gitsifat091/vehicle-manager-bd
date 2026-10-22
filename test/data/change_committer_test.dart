@@ -406,9 +406,9 @@ void main() {
         permits: {'light', 'hazmat'},
       ),
     );
-    await ChangeCommitter(db).commit(
-      ChangeSet(cashAfter: startCash + 500, completedTripsAfter: 2),
-    );
+    await ChangeCommitter(
+      db,
+    ).commit(ChangeSet(cashAfter: startCash + 500, completedTripsAfter: 2));
     final company = db.company.load()!;
     expect(company.cash, startCash + 500);
     expect(company.completedTrips, 2);

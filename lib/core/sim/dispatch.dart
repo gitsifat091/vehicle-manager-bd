@@ -61,8 +61,7 @@ RouteState routeDemandAt({
   required GameCalendar calendar,
 }) {
   final today = calendar.dayIndex(t);
-  final current =
-      saved ?? RouteState.initial(route, t, gameDay: today);
+  final current = saved ?? RouteState.initial(route, t, gameDay: today);
   // Old saves have no day number. The day of their timestamp is the best guess.
   final savedDay = current.gameDay ?? calendar.dayIndex(current.updatedAt);
   if (today > savedDay) {
