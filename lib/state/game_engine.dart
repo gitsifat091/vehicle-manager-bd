@@ -250,6 +250,62 @@ class GameEngine extends ChangeNotifier {
     return null;
   });
 
+  /// Takes the route and cargo away from [vehicleId]. A trip already on the
+  /// road still finishes and is paid; the vehicle then stays in the garage
+  /// instead of going out again. This is the first step of selling. Returns
+  /// false when the vehicle is not in the garage.
+  ///
+  /// Throws a [StateError] when there is no game.
+  Future<bool> unassignVehicle(String vehicleId) => _serial(() async {
+    final company = _requireCompany();
+    final vehicle = _db.vehicles.get(vehicleId);
+    if (vehicle == null) return false;
+    if (!vehicle.isAssigned) return true;
+    await _committer.commit(
+      ChangeSet(
+        cashAfter: company.cash,
+        completedTripsAfter: company.completedTrips,
+        vehicles: [vehicle.withoutAssignment()],
+      ),
+    );
+    notifyListeners();
+    return true;
+  });
+
+  /// Sells [vehicleId] for its resale value (`resaleValueTk`) and frees its
+  /// garage slot. Refused while the vehicle is on the road (`checkSale`):
+  /// unassign it, let the trip finish, then sell. Returns why it was
+  /// refused, or null when sold.
+  ///
+  /// Throws a [StateError] when there is no game.
+  Future<SaleRejection?> sellVehicle(String vehicleId) => _serial(() async {
+    final company = _requireCompany();
+    final vehicle = _db.vehicles.get(vehicleId);
+    if (vehicle == null) {
+      return SaleRejection(
+        SaleRejectionReason.notOwned,
+        'Vehicle $vehicleId is not in the garage.',
+      );
+    }
+    final rejection = checkSale(
+      onTheRoad: _db.trips.activeFor(vehicleId) != null,
+    );
+    if (rejection != null) return rejection;
+
+    final spec = config.vehicleByTier(vehicle.tier);
+    await _committer.commit(
+      ChangeSet(
+        cashAfter:
+            company.cash +
+            resaleValueTk(settings: config.settings, vehicle: spec),
+        completedTripsAfter: company.completedTrips,
+        removedVehicleIds: [vehicleId],
+      ),
+    );
+    notifyListeners();
+    return null;
+  });
+
   Company _requireCompany() {
     final company = _db.company.load();
     if (company == null) throw StateError('There is no game to buy for.');
@@ -275,17 +331,44 @@ class GameEngine extends ChangeNotifier {
   Future<void> _advance() async {
     final turbo = _turbo;
     if (turbo == null || _db.company.load() == null) return;
-    final change = _simulator.advance(
+    final settled = _simulator.advance(
       world: _loadWorld(),
       now: _clock.now(),
       turboSpeed: turbo.speed,
       turboBonus: _schedule.bonusAt(turbo.elapsed),
     );
+    // Pruning rides along with a settlement, which is when the history grows.
+    final change = settled.isEmpty
+        ? settled
+        : settled.withRemovedTrips(_tripsToPrune());
     if (!change.isEmpty) {
       await _committer.commit(change);
     }
     await _saveTurbo();
     if (!change.isEmpty) notifyListeners();
+  }
+
+  /// Settled trips kept on disk for the trip history. Older ones are deleted;
+  /// the lifetime totals and day rollups already count them.
+  static const keptSettledTrips = 500;
+
+  /// How far past [keptSettledTrips] the history may grow before it is cut
+  /// back, so pruning runs now and then rather than on every settlement.
+  static const pruneSlack = 50;
+
+  /// Ids of the oldest settled trips on disk beyond [keptSettledTrips], once
+  /// there are more than [keptSettledTrips] + [pruneSlack]. Every settled trip
+  /// on disk was counted in the commit that settled it, so deleting it loses
+  /// nothing. Trips still on the road are never pruned.
+  List<String> _tripsToPrune() {
+    final settledCount = _db.trips.count - _db.trips.unsettled().length;
+    if (settledCount <= keptSettledTrips + pruneSlack) return const [];
+    final settled = _db.trips.all().where((t) => t.settled).toList()
+      ..sort((a, b) {
+        final byArrival = b.arriveAt.compareTo(a.arriveAt);
+        return byArrival != 0 ? byArrival : b.id.compareTo(a.id);
+      });
+    return [for (final t in settled.skip(keptSettledTrips)) t.id];
   }
 
   SimWorld _loadWorld({Vehicle? replacing}) {

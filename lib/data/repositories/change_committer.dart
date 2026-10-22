@@ -17,6 +17,9 @@ enum CommitStep {
   /// Sold vehicles are deleted.
   vehiclesRemoved,
   tripsSaved,
+
+  /// Pruned trips are deleted.
+  tripsRemoved,
   routeStatesSaved,
   dayRollupsSaved,
 
@@ -28,8 +31,8 @@ enum CommitStep {
 /// trip twice or lose a payout.
 ///
 /// 1. Write the change set as the pending record, in one put.
-/// 2. Apply it: company, vehicles (new, changed, removed), trips, route
-///    states, day rollups.
+/// 2. Apply it: company, vehicles (new, changed, removed), trips (new,
+///    changed, pruned), route states, day rollups.
 /// 3. Clear the pending record.
 ///
 /// Every value in a change set is absolute (the new cash total, the whole
@@ -90,6 +93,8 @@ class ChangeCommitter {
     await afterStep?.call(CommitStep.vehiclesRemoved);
     await _db.trips.putAll(change.trips);
     await afterStep?.call(CommitStep.tripsSaved);
+    await _db.trips.box.deleteAll(change.removedTripIds);
+    await afterStep?.call(CommitStep.tripsRemoved);
     await _db.routeStates.putAll(change.routeStates);
     await afterStep?.call(CommitStep.routeStatesSaved);
     await _db.dayRollups.putAll(change.dayRollups);

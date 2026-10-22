@@ -697,6 +697,196 @@ void main() {
     });
   });
 
+  group('selling', () {
+    // The free starter Sathi Plus sells for 60 percent of Tk 13 lakh.
+    const starterResale = 780000;
+
+    String starterId() => db.vehicles.all().single.id;
+
+    test('an idle vehicle sells for its resale value', () async {
+      await engine.startNewGame('Test Ltd');
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      expect(await engine.sellVehicle(starterId()), isNull);
+
+      expect(db.vehicles.count, 0);
+      expect(db.company.load()!.cash, 1500000 + starterResale);
+      expect(db.pending.load(), isNull);
+      expect(heard, 1);
+      expect(engine.snapshot.vehicles, isEmpty);
+    });
+
+    test('unassign, let the trip finish, then sell', () async {
+      await engine.startNewGame('Test Ltd');
+      await finishTurbo();
+      final id = starterId();
+      await engine.assignVehicle(id, routeId: 'R01', cargoName: 'General dry');
+
+      // On the road: no sale.
+      final refused = await engine.sellVehicle(id);
+      expect(refused!.reason, SaleRejectionReason.vehicleOnTheRoad);
+
+      expect(await engine.unassignVehicle(id), true);
+      expect(db.vehicles.get(id)!.isAssigned, false);
+      expect(db.trips.activeFor(id), isNotNull, reason: 'the trip goes on');
+      expect(
+        (await engine.sellVehicle(id))!.reason,
+        SaleRejectionReason.vehicleOnTheRoad,
+      );
+
+      // The trip arrives, is paid, and the vehicle stays home.
+      clock.advance(const Duration(seconds: 100));
+      await engine.tick();
+      expect(db.trips.activeFor(id), isNull);
+      expect(db.trips.count, 1, reason: 'no new trip after unassigning');
+      expect(db.company.load()!.cash, 1500000 + profitPerTrip);
+
+      expect(await engine.sellVehicle(id), isNull);
+      expect(db.vehicles.get(id), isNull);
+      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterResale);
+
+      // A second tap on the same sale changes nothing.
+      final again = await engine.sellVehicle(id);
+      expect(again!.reason, SaleRejectionReason.notOwned);
+      expect(db.company.load()!.cash, 1500000 + profitPerTrip + starterResale);
+    });
+
+    test('unassigning a vehicle that waits for demand keeps it home', () async {
+      await engine.startNewGame('Test Ltd');
+      // Today's R01 demand is used up; tomorrow it resets to 60 t.
+      await db.routeStates.put(
+        RouteState(
+          routeId: 'R01',
+          demandRemainingT: 0,
+          updatedAt: clock.now(),
+          gameDay: 0,
+        ),
+      );
+      final id = starterId();
+      // A second vehicle waits on the same route and stays assigned.
+      final control = (await engine.buyVehicle(2)).vehicle!.id;
+      for (final v in [id, control]) {
+        final outcome = await engine.assignVehicle(
+          v,
+          routeId: 'R01',
+          cargoName: 'Parcels',
+        );
+        expect(outcome.plan, isA<DispatchWaiting>(), reason: v);
+      }
+
+      expect(await engine.unassignVehicle(id), true);
+      expect(db.vehicles.get(id)!.isAssigned, false);
+      // The next day brings demand: the assigned one goes, the other stays.
+      clock.advance(const Duration(hours: 1));
+      await engine.tick();
+      expect(db.trips.forVehicle(control), isNotEmpty);
+      expect(db.trips.forVehicle(id), isEmpty);
+      expect(await engine.sellVehicle(id), isNull);
+    });
+
+    test('unassigning an idle or unknown vehicle', () async {
+      await engine.startNewGame('Test Ltd');
+      var heard = 0;
+      engine.addListener(() => heard++);
+      expect(await engine.unassignVehicle(starterId()), true);
+      expect(heard, 0, reason: 'nothing changed');
+      expect(await engine.unassignVehicle('nope'), false);
+    });
+
+    test('a sale frees a garage slot', () async {
+      await engine.startNewGame('Test Ltd');
+      final vans = [
+        for (var i = 0; i < 5; i++) (await engine.buyVehicle(1)).vehicle!,
+      ];
+      expect(
+        (await engine.buyVehicle(1)).rejection!.reason,
+        PurchaseRejectionReason.noFreeGarageSlot,
+      );
+      expect(await engine.sellVehicle(vans.first.id), isNull);
+      expect((await engine.buyVehicle(1)).bought, true);
+      expect(db.vehicles.count, 6);
+      // Five vans at Tk 20,000, one sold for Tk 12,000, one more bought.
+      expect(db.company.load()!.cash, 1500000 - 6 * 20000 + 12000);
+    });
+
+    test('without a game selling is a programming error', () async {
+      expect(() => engine.sellVehicle('v1'), throwsStateError);
+      expect(() => engine.unassignVehicle('v1'), throwsStateError);
+    });
+  });
+
+  group('pruning the trip history', () {
+    late String starter;
+
+    setUp(() async {
+      await engine.startNewGame('Test Ltd');
+      await finishTurbo();
+      starter = db.vehicles.all().single.id;
+      await engine.assignVehicle(
+        starter,
+        routeId: 'R01',
+        cargoName: 'General dry',
+      );
+    });
+
+    List<Trip> settledOnDisk() =>
+        db.trips.all().where((t) => t.settled).toList();
+
+    test('below 550 settled trips nothing is pruned', () async {
+      // 550 trips of 84 s.
+      clock.advance(const Duration(seconds: 550 * 84 + 10));
+      await engine.tick();
+      expect(settledOnDisk(), hasLength(550));
+      clock.advance(const Duration(seconds: 30));
+      await engine.tick();
+      expect(settledOnDisk(), hasLength(550), reason: 'no new arrival yet');
+    });
+
+    test('past 550 the history is cut to the newest 500', () async {
+      clock.advance(const Duration(hours: 13));
+      await engine.tick();
+      final before = settledOnDisk();
+      expect(before.length, greaterThan(550));
+
+      // Pruning rides along with the next settlement.
+      clock.advance(const Duration(seconds: 100));
+      await engine.tick();
+      final company = db.company.load()!;
+      final kept = settledOnDisk();
+      final newlySettled = company.completedTrips - before.length;
+      expect(newlySettled, greaterThan(0));
+      expect(kept, hasLength(GameEngine.keptSettledTrips + newlySettled));
+
+      // The oldest went, the newest stayed.
+      final keptIds = {for (final t in kept) t.id};
+      final pruned = before.where((t) => !keptIds.contains(t.id)).toList();
+      expect(pruned, hasLength(before.length - GameEngine.keptSettledTrips));
+      final newestPruned = pruned
+          .map((t) => t.arriveAt)
+          .reduce((a, b) => a.isAfter(b) ? a : b);
+      expect(kept.every((t) => t.arriveAt.isAfter(newestPruned)), true);
+
+      // The trip on the road is never pruned.
+      expect(db.trips.activeFor(starter), isNotNull);
+    });
+
+    test('pruning keeps every trip counted', () async {
+      clock.advance(const Duration(hours: 13));
+      await engine.tick();
+      clock.advance(const Duration(seconds: 100));
+      await engine.tick();
+
+      final company = db.company.load()!;
+      expect(settledOnDisk().length, lessThan(company.completedTrips));
+      expect(company.lifetimeProfit, company.completedTrips * profitPerTrip);
+      final days = db.dayRollups.all();
+      expect(days.fold<int>(0, (s, d) => s + d.trips), company.completedTrips);
+      expect(days.fold<int>(0, (s, d) => s + d.profit), company.lifetimeProfit);
+      expect(company.cash, 1500000 + company.lifetimeProfit);
+    });
+  });
+
   group('8 hours away', () {
     test(
       'catches up on a restart: 342 trips paid, one still on the road',

@@ -171,6 +171,7 @@ void main() {
           completedTripsAfter: 6,
           vehicles: [Vehicle(id: 'v9', tier: 5, purchasedAt: t0)],
           removedVehicleIds: ['v1', 'v2'],
+          removedTripIds: ['t7'],
           trips: [trip],
           permitsAfter: {'medium', 'light'},
           lifetimeRevenueAfter: 36375,
@@ -182,6 +183,7 @@ void main() {
       expect(loaded.completedTripsAfter, 6);
       expect(loaded.vehicles.single.id, 'v9');
       expect(loaded.removedVehicleIds, ['v1', 'v2']);
+      expect(loaded.removedTripIds, ['t7']);
       expect(loaded.trips.single, trip);
       expect(loaded.permitsAfter, {'light', 'medium'});
       expect(loaded.lifetimeRevenueAfter, 36375);
@@ -197,6 +199,7 @@ void main() {
         );
         expect(unchanged.permitsAfter, isNull);
         expect(unchanged.removedVehicleIds, isEmpty);
+        expect(unchanged.removedTripIds, isEmpty);
         expect(unchanged.lifetimeRevenueAfter, isNull);
         expect(unchanged.lifetimeCostsAfter, isNull);
         expect(unchanged.dayRollups, isEmpty);
@@ -299,6 +302,7 @@ void main() {
       expect(loaded.trips.single.settled, true);
       expect(loaded.permitsAfter, isNull, reason: 'permits stay as they are');
       expect(loaded.removedVehicleIds, isEmpty);
+      expect(loaded.removedTripIds, isEmpty);
       expect(loaded.lifetimeRevenueAfter, isNull);
       expect(loaded.lifetimeCostsAfter, isNull);
       expect(loaded.dayRollups, isEmpty);

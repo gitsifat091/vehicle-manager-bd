@@ -19,6 +19,7 @@ class ChangeSet {
     List<Vehicle> vehicles = const [],
     List<String> removedVehicleIds = const [],
     List<Trip> trips = const [],
+    List<String> removedTripIds = const [],
     List<RouteState> routeStates = const [],
     Set<String>? permitsAfter,
     this.lifetimeRevenueAfter,
@@ -27,6 +28,7 @@ class ChangeSet {
   }) : vehicles = List.unmodifiable(vehicles),
        removedVehicleIds = List.unmodifiable(removedVehicleIds),
        trips = List.unmodifiable(trips),
+       removedTripIds = List.unmodifiable(removedTripIds),
        routeStates = List.unmodifiable(routeStates),
        permitsAfter = permitsAfter == null
            ? null
@@ -46,6 +48,10 @@ class ChangeSet {
 
   /// New trips and trips that changed (settled, with their final costs).
   final List<Trip> trips;
+
+  /// Old settled trips to delete (pruning). Only trips already counted in
+  /// the lifetime totals and day rollups, so nothing is lost.
+  final List<String> removedTripIds;
   final List<RouteState> routeStates;
 
   /// Every permit the company owns after the change (a permit purchase).
@@ -68,9 +74,25 @@ class ChangeSet {
       vehicles.isEmpty &&
       removedVehicleIds.isEmpty &&
       trips.isEmpty &&
+      removedTripIds.isEmpty &&
       routeStates.isEmpty &&
       permitsAfter == null &&
       dayRollups.isEmpty;
+
+  /// The same change that also prunes [tripIds].
+  ChangeSet withRemovedTrips(List<String> tripIds) => ChangeSet(
+    cashAfter: cashAfter,
+    completedTripsAfter: completedTripsAfter,
+    vehicles: vehicles,
+    removedVehicleIds: removedVehicleIds,
+    trips: trips,
+    removedTripIds: [...removedTripIds, ...tripIds],
+    routeStates: routeStates,
+    permitsAfter: permitsAfter,
+    lifetimeRevenueAfter: lifetimeRevenueAfter,
+    lifetimeCostsAfter: lifetimeCostsAfter,
+    dayRollups: dayRollups,
+  );
 
   /// Trips in this change that are paid out.
   Iterable<Trip> get settledTrips => trips.where((t) => t.settled);
@@ -78,6 +100,7 @@ class ChangeSet {
   @override
   String toString() =>
       'ChangeSet(cash: $cashAfter, trips: ${trips.length}, '
+      'pruned: ${removedTripIds.length}, '
       'vehicles: ${vehicles.length}, removed: ${removedVehicleIds.length}, '
       'routes: ${routeStates.length}, days: ${dayRollups.length})';
 }

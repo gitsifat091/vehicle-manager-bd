@@ -230,6 +230,7 @@ class ChangeSetAdapter extends TypeAdapter<ChangeSet> {
       lifetimeRevenueAfter: f[7] as int?,
       lifetimeCostsAfter: f[8] as TripCosts?,
       dayRollups: [...?(f[9] as List?)?.cast<DayRollup>()],
+      removedTripIds: [...?(f[10] as List?)?.cast<String>()],
     );
   }
 
@@ -248,6 +249,7 @@ class ChangeSetAdapter extends TypeAdapter<ChangeSet> {
       if (obj.lifetimeRevenueAfter != null) 7: obj.lifetimeRevenueAfter,
       if (obj.lifetimeCostsAfter != null) 8: obj.lifetimeCostsAfter,
       if (obj.dayRollups.isNotEmpty) 9: obj.dayRollups,
+      if (obj.removedTripIds.isNotEmpty) 10: obj.removedTripIds,
     });
   }
 }

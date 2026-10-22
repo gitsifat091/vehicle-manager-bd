@@ -32,6 +32,10 @@ enum SaleRejectionReason {
   /// The vehicle has a trip that has not been settled. Unassign it, let the
   /// trip finish, then sell.
   vehicleOnTheRoad,
+
+  /// The vehicle is not in the garage, for example a second tap on a sale
+  /// that already went through.
+  notOwned,
 }
 
 /// Why a vehicle cannot be sold. [message] is for logs and tests.

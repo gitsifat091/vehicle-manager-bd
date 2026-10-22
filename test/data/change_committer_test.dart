@@ -315,14 +315,28 @@ void main() {
     expect(db.company.load()!.cash, startCash);
   });
 
-  group('crash safety: a purchase, a sale and a permit', () {
+  group('crash safety: a purchase, a sale, a permit and pruning', () {
     late SaveDatabase db;
     final bought = Vehicle(id: 'v9', tier: 5, purchasedAt: t0);
+    final oldTrip = Trip(
+      id: 'trip_old',
+      vehicleId: 'v1',
+      vehicleTier: 4,
+      routeId: 'R01',
+      cargo: 'General dry',
+      loadT: 1.5,
+      departAt: t0,
+      arriveAt: t0.add(const Duration(seconds: 84)),
+      revenue: 2693,
+      costs: TripCosts.zero,
+      settled: true,
+    );
     final change = ChangeSet(
       cashAfter: startCash - 400000,
       completedTripsAfter: 0,
       vehicles: [bought],
       removedVehicleIds: ['v1'],
+      removedTripIds: ['trip_old'],
       permitsAfter: {'light'},
     );
 
@@ -330,6 +344,7 @@ void main() {
       db = await folder.open();
       await seedCompany(db);
       await db.vehicles.put(assignedVehicle());
+      await db.trips.put(oldTrip);
     }
 
     void expectApplied(SaveDatabase check) {
@@ -339,6 +354,7 @@ void main() {
       expect(check.vehicles.get('v9'), bought);
       expect(check.vehicles.get('v1'), isNull, reason: 'the sold one is gone');
       expect(check.vehicles.count, 1);
+      expect(check.trips.get('trip_old'), isNull, reason: 'pruned');
       expect(check.pending.load(), isNull);
     }
 
