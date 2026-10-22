@@ -25,8 +25,9 @@ enum ShellDestination { map, garage, finance, settings }
 ///   side panel next to it. Choosing the map closes the panel. If a wide
 ///   rail leaves no room for both, it falls back to the medium content
 ///
-/// All three share the header (company, cash, turbo) and the selection, so
-/// resizing a window across a breakpoint keeps the page.
+/// All three share the header (company, cash, turbo) and the selection (the
+/// page and the vehicle open in the garage), so resizing a window across a
+/// breakpoint keeps both.
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
@@ -50,8 +51,15 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   late ShellDestination _selected = widget.initialDestination;
 
-  void _select(int index) =>
-      setState(() => _selected = ShellDestination.values[index]);
+  /// The vehicle whose detail the garage shows, or null for its list.
+  String? _openVehicleId;
+
+  /// Choosing the garage again while it is open goes back to its list.
+  void _select(int index) => setState(() {
+    final d = ShellDestination.values[index];
+    if (d == ShellDestination.garage && _selected == d) _openVehicleId = null;
+    _selected = d;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +146,11 @@ class _AppShellState extends State<AppShell> {
         title: _label(context, d),
         onMap: true,
       ),
-      ShellDestination.garage => const GarageScreen(),
+      ShellDestination.garage => GarageScreen(
+        openVehicleId: _openVehicleId,
+        onOpenVehicle: (id) => setState(() => _openVehicleId = id),
+        onCloseVehicle: () => setState(() => _openVehicleId = null),
+      ),
       ShellDestination.finance ||
       ShellDestination.settings => ComingLater(title: _label(context, d)),
     };

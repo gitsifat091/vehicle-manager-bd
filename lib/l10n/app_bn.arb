@@ -51,6 +51,72 @@
 
   "tempStartWorking": "কাজে পাঠান (সাময়িক)",
 
+  "vehicleProfitPerHour": "প্রত্যাশিত লাভ ঘণ্টায় {amount}",
+
+  "vehicleDetailBack": "গ্যারেজে ফিরুন",
+
+  "vehicleTierLine": "স্তর {tier}",
+
+  "vehicleGoesHomeNote": "আর কোনো কাজ দেওয়া নেই। এই যাত্রার পরে গ্যারেজে ফিরবে।",
+
+  "vehicleUnassignButton": "কাজ থেকে সরান",
+
+  "vehicleEarningsTitle": "আয়ের হিসাব",
+
+  "vehicleProfitPerHourLabel": "ঘণ্টায় প্রত্যাশিত লাভ",
+
+  "vehicleProfitPerHourNote": "স্বাভাবিক গতিতে। টার্বো স্টার্টে সময় দ্রুত কাটে।",
+
+  "vehicleSaleValueLabel": "বিক্রি করলে পাবেন",
+
+  "vehicleCurrentTripTitle": "চলতি যাত্রা",
+
+  "tripLoadLabel": "মাল",
+
+  "tripRevenueLabel": "আয়",
+
+  "costEnergyLabel": "জ্বালানি",
+
+  "costTollLabel": "টোল",
+
+  "costCrewLabel": "চালক ও সহকারী",
+
+  "costMaintenanceLabel": "রক্ষণাবেক্ষণ",
+
+  "costFinesExpectedLabel": "জরিমানা (আনুমানিক)",
+
+  "costAccidentExpectedLabel": "দুর্ঘটনার ঝুঁকি (আনুমানিক)",
+
+  "tripProfitExpectedLabel": "লাভ (আনুমানিক)",
+
+  "vehicleRecentTripsTitle": "সাম্প্রতিক যাত্রা",
+
+  "vehicleRecentTripsNote": "শুধু সাম্প্রতিক যাত্রাগুলো রাখা হয়।",
+
+  "vehicleRecentTripsNone": "এখনো কোনো যাত্রা শেষ হয়নি।",
+
+  "vehicleSpecsTitle": "বৈশিষ্ট্য",
+
+  "specPriceLabel": "দাম",
+
+  "specLegalPayloadLabel": "আইনসম্মত ভার",
+
+  "specMaxLoadLabel": "সর্বোচ্চ ভার",
+
+  "specSpeedLabel": "গড় গতি",
+
+  "specMileageLabel": "মাইলেজ",
+
+  "specEnergyCostLabel": "শক্তির খরচ",
+
+  "tonsValue": "{tons} টন",
+
+  "speedValue": "ঘণ্টায় {speed} কিমি",
+
+  "mileageValue": "লিটারে {km} কিমি",
+
+  "perKmValue": "কিমিতে ৳ {amount}",
+
   "vehicleName": "{tier, select, tier1{সোনার ভ্যান} tier2{বিজলি কার্গো} tier3{টুনটুনি মিনি} tier4{সাথী প্লাস} tier5{মেঘনা ১৪} tier6{যমুনা খোলা ট্রাক} tier7{কর্ণফুলী ২০} tier8{হিমালয় রিফার} tier9{পাহাড়ি টিপার} tier10{তেলরানী} tier11{বঙ্গমুভার ৪০} tier12{হাতি লো-বেড} other{যানবাহন}}",
 
   "routeName": "{route, select, m01{কাওরান বাজার থেকে কাছের দোকান} m02{ঢাকার পাড়ায় ডেলিভারি} r01{তেজগাঁও থেকে ঢাকা শহর} r02{ঢাকা থেকে নারায়ণগঞ্জ} r03{ঢাকা থেকে গাজীপুর} r04{ঢাকা থেকে কুমিল্লা} r05{ঢাকা থেকে চট্টগ্রাম বন্দর} r06{গাজীপুর থেকে চট্টগ্রাম বন্দর} r07{ঢাকা থেকে সিলেট} r08{ঢাকা থেকে বগুড়া} r09{ঢাকা থেকে রংপুর} r10{ঢাকা থেকে খুলনা, পদ্মা সেতু হয়ে} r11{ঢাকা থেকে খুলনা, পাটুরিয়া ফেরি হয়ে} r12{ঢাকা থেকে বেনাপোল} r13{চট্টগ্রাম বন্দর থেকে কুমিল্লা} r14{নারায়ণগঞ্জ থেকে ঢাকার নির্মাণস্থল} other{রুট}}",

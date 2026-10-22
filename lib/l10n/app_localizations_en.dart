@@ -100,6 +100,119 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tempStartWorking => 'Start working (temporary)';
 
   @override
+  String vehicleProfitPerHour(String amount) {
+    return 'Expected profit $amount an hour';
+  }
+
+  @override
+  String get vehicleDetailBack => 'Back to garage';
+
+  @override
+  String vehicleTierLine(String tier) {
+    return 'Tier $tier';
+  }
+
+  @override
+  String get vehicleGoesHomeNote =>
+      'Not assigned any more. It comes home after this trip.';
+
+  @override
+  String get vehicleUnassignButton => 'Unassign';
+
+  @override
+  String get vehicleEarningsTitle => 'Earnings';
+
+  @override
+  String get vehicleProfitPerHourLabel => 'Expected profit per hour';
+
+  @override
+  String get vehicleProfitPerHourNote =>
+      'At normal speed. Turbo Start makes the hours pass faster.';
+
+  @override
+  String get vehicleSaleValueLabel => 'Sells for';
+
+  @override
+  String get vehicleCurrentTripTitle => 'Current trip';
+
+  @override
+  String get tripLoadLabel => 'Load';
+
+  @override
+  String get tripRevenueLabel => 'Revenue';
+
+  @override
+  String get costEnergyLabel => 'Fuel';
+
+  @override
+  String get costTollLabel => 'Tolls';
+
+  @override
+  String get costCrewLabel => 'Crew';
+
+  @override
+  String get costMaintenanceLabel => 'Maintenance';
+
+  @override
+  String get costFinesExpectedLabel => 'Fines (expected)';
+
+  @override
+  String get costAccidentExpectedLabel => 'Accident risk (expected)';
+
+  @override
+  String get tripProfitExpectedLabel => 'Profit (expected)';
+
+  @override
+  String get vehicleRecentTripsTitle => 'Recent trips';
+
+  @override
+  String get vehicleRecentTripsNote => 'Only the most recent trips are kept.';
+
+  @override
+  String get vehicleRecentTripsNone => 'No finished trips yet.';
+
+  @override
+  String get vehicleSpecsTitle => 'Specifications';
+
+  @override
+  String get specPriceLabel => 'Price';
+
+  @override
+  String get specLegalPayloadLabel => 'Legal payload';
+
+  @override
+  String get specMaxLoadLabel => 'Maximum load';
+
+  @override
+  String get specSpeedLabel => 'Average speed';
+
+  @override
+  String get specMileageLabel => 'Mileage';
+
+  @override
+  String get specEnergyCostLabel => 'Energy cost';
+
+  @override
+  String tonsValue(String tons) {
+    return '$tons t';
+  }
+
+  @override
+  String speedValue(String speed) {
+    return '$speed km/h';
+  }
+
+  @override
+  String mileageValue(String km) {
+    return '$km km per litre';
+  }
+
+  @override
+  String perKmValue(String amount) {
+    return 'Tk $amount per km';
+  }
+
+  @override
   String vehicleName(String tier) {
     String _temp0 = intl.Intl.selectLogic(tier, {
       'tier1': 'Sonar Van',

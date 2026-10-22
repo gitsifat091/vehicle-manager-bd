@@ -73,10 +73,12 @@ class GameEngine extends ChangeNotifier {
         final byTime = a.purchasedAt.compareTo(b.purchasedAt);
         return byTime != 0 ? byTime : a.id.compareTo(b.id);
       });
+    final trips = _db.trips.all();
     return GameSnapshot(
       company: _db.company.load(),
       vehicles: vehicles,
-      activeTrips: _db.trips.unsettled(),
+      activeTrips: trips.where((t) => !t.settled),
+      settledTrips: trips.where((t) => t.settled),
       routeStates: _db.routeStates.all(),
       settings: config.settings,
     );

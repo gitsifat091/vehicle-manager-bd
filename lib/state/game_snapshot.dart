@@ -20,7 +20,9 @@ class GameSnapshot {
     required Iterable<Trip> activeTrips,
     required Iterable<RouteState> routeStates,
     required this.settings,
+    Iterable<Trip> settledTrips = const [],
   }) : vehicles = List.unmodifiable(vehicles),
+       recentTripsByVehicle = _recentByVehicle(settledTrips),
        activeTripByVehicle = Map.unmodifiable({
          for (final t in activeTrips) t.vehicleId: t,
        }),
@@ -40,6 +42,14 @@ class GameSnapshot {
   final Map<String, RouteState> routeStateById;
   final EconomySettings settings;
 
+  /// The newest settled trips of each vehicle, newest first, at most
+  /// [recentTripsPerVehicle] each. Taken from the trips the engine keeps
+  /// (`GameEngine.keptSettledTrips`), so older ones are gone.
+  final Map<String, List<Trip>> recentTripsByVehicle;
+
+  /// How many settled trips per vehicle [recentTripsByVehicle] keeps.
+  static const recentTripsPerVehicle = 10;
+
   bool get hasGame => company != null;
 
   /// Operating permits the company owns.
@@ -57,6 +67,11 @@ class GameSnapshot {
     return null;
   }
 
+  /// The newest settled trips of [vehicleId], newest first. Empty when it
+  /// has none.
+  List<Trip> recentTripsOf(String vehicleId) =>
+      recentTripsByVehicle[vehicleId] ?? const [];
+
   /// What [vehicle] is doing at [now].
   VehicleActivity activityOf(Vehicle vehicle, DateTime now) {
     return vehicleActivity(
@@ -65,4 +80,21 @@ class GameSnapshot {
       now: now,
     );
   }
+}
+
+Map<String, List<Trip>> _recentByVehicle(Iterable<Trip> settled) {
+  final byVehicle = <String, List<Trip>>{};
+  for (final t in settled) {
+    if (t.settled) (byVehicle[t.vehicleId] ??= []).add(t);
+  }
+  return Map.unmodifiable({
+    for (final e in byVehicle.entries)
+      e.key: List<Trip>.unmodifiable(
+        (e.value..sort((a, b) {
+              final byArrival = b.arriveAt.compareTo(a.arriveAt);
+              return byArrival != 0 ? byArrival : b.id.compareTo(a.id);
+            }))
+            .take(GameSnapshot.recentTripsPerVehicle),
+      ),
+  });
 }

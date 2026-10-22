@@ -248,6 +248,204 @@ abstract class AppLocalizations {
   /// **'Start working (temporary)'**
   String get tempStartWorking;
 
+  /// On a garage tile: what the vehicle's job is expected to earn per real hour at normal speed. The amount is already formatted as money.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected profit {amount} an hour'**
+  String vehicleProfitPerHour(String amount);
+
+  /// Button at the top of the vehicle detail that returns to the garage list.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to garage'**
+  String get vehicleDetailBack;
+
+  /// Under the vehicle name in the detail: its size tier. The number is already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tier {tier}'**
+  String vehicleTierLine(String tier);
+
+  /// In the vehicle detail: the vehicle was unassigned while on a trip. The trip still finishes and is paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned any more. It comes home after this trip.'**
+  String get vehicleGoesHomeNote;
+
+  /// Button in the vehicle detail that takes the route away. A trip on the road still finishes.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassign'**
+  String get vehicleUnassignButton;
+
+  /// Heading of the vehicle detail section with the expected profit and the sale value.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings'**
+  String get vehicleEarningsTitle;
+
+  /// Label of the expected profit per real hour of the vehicle's job.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected profit per hour'**
+  String get vehicleProfitPerHourLabel;
+
+  /// Explains that the expected profit per hour is at 1x speed.
+  ///
+  /// In en, this message translates to:
+  /// **'At normal speed. Turbo Start makes the hours pass faster.'**
+  String get vehicleProfitPerHourNote;
+
+  /// Label of what selling the vehicle would pay.
+  ///
+  /// In en, this message translates to:
+  /// **'Sells for'**
+  String get vehicleSaleValueLabel;
+
+  /// Heading of the vehicle detail section with the money of the trip on the road.
+  ///
+  /// In en, this message translates to:
+  /// **'Current trip'**
+  String get vehicleCurrentTripTitle;
+
+  /// Label of the tons a trip carries.
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get tripLoadLabel;
+
+  /// Label of what a trip is paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get tripRevenueLabel;
+
+  /// Label of the fuel or energy cost of a trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get costEnergyLabel;
+
+  /// Label of the bridge and road tolls of a trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tolls'**
+  String get costTollLabel;
+
+  /// Label of the driver and helper wages of a trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Crew'**
+  String get costCrewLabel;
+
+  /// Label of the wear and repair cost of a trip.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get costMaintenanceLabel;
+
+  /// Label of the expected overload fines of a trip on the road. The real fines are rolled when it arrives.
+  ///
+  /// In en, this message translates to:
+  /// **'Fines (expected)'**
+  String get costFinesExpectedLabel;
+
+  /// Label of the expected accident cost of a trip on the road. Whether an accident happens is rolled when it arrives.
+  ///
+  /// In en, this message translates to:
+  /// **'Accident risk (expected)'**
+  String get costAccidentExpectedLabel;
+
+  /// Label of the expected profit of a trip on the road.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit (expected)'**
+  String get tripProfitExpectedLabel;
+
+  /// Heading of the list of the vehicle's last finished trips.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent trips'**
+  String get vehicleRecentTripsTitle;
+
+  /// Under the recent trips heading: older trips are not listed.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the most recent trips are kept.'**
+  String get vehicleRecentTripsNote;
+
+  /// Shown when the vehicle has no finished trip to list.
+  ///
+  /// In en, this message translates to:
+  /// **'No finished trips yet.'**
+  String get vehicleRecentTripsNone;
+
+  /// Heading of the vehicle detail section with price, payload and speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Specifications'**
+  String get vehicleSpecsTitle;
+
+  /// Label of the vehicle's purchase price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get specPriceLabel;
+
+  /// Label of the tons the vehicle may carry by law.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal payload'**
+  String get specLegalPayloadLabel;
+
+  /// Label of the most tons the vehicle can physically carry, overloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum load'**
+  String get specMaxLoadLabel;
+
+  /// Label of the vehicle's average road speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Average speed'**
+  String get specSpeedLabel;
+
+  /// Label of how far the vehicle goes on one litre of diesel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mileage'**
+  String get specMileageLabel;
+
+  /// Label of the energy cost per km of a vehicle that does not run on diesel.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy cost'**
+  String get specEnergyCostLabel;
+
+  /// A weight in tons. The number is already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{tons} t'**
+  String tonsValue(String tons);
+
+  /// A speed in kilometres per hour. The number is already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} km/h'**
+  String speedValue(String speed);
+
+  /// Diesel mileage. The number is already formatted.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km per litre'**
+  String mileageValue(String km);
+
+  /// A cost per kilometre in Taka. The number is already formatted, without the currency sign.
+  ///
+  /// In en, this message translates to:
+  /// **'Tk {amount} per km'**
+  String perKmValue(String amount);
+
   /// The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.
   ///
   /// In en, this message translates to:

@@ -100,6 +100,119 @@ class AppLocalizationsBn extends AppLocalizations {
   String get tempStartWorking => 'কাজে পাঠান (সাময়িক)';
 
   @override
+  String vehicleProfitPerHour(String amount) {
+    return 'প্রত্যাশিত লাভ ঘণ্টায় $amount';
+  }
+
+  @override
+  String get vehicleDetailBack => 'গ্যারেজে ফিরুন';
+
+  @override
+  String vehicleTierLine(String tier) {
+    return 'স্তর $tier';
+  }
+
+  @override
+  String get vehicleGoesHomeNote =>
+      'আর কোনো কাজ দেওয়া নেই। এই যাত্রার পরে গ্যারেজে ফিরবে।';
+
+  @override
+  String get vehicleUnassignButton => 'কাজ থেকে সরান';
+
+  @override
+  String get vehicleEarningsTitle => 'আয়ের হিসাব';
+
+  @override
+  String get vehicleProfitPerHourLabel => 'ঘণ্টায় প্রত্যাশিত লাভ';
+
+  @override
+  String get vehicleProfitPerHourNote =>
+      'স্বাভাবিক গতিতে। টার্বো স্টার্টে সময় দ্রুত কাটে।';
+
+  @override
+  String get vehicleSaleValueLabel => 'বিক্রি করলে পাবেন';
+
+  @override
+  String get vehicleCurrentTripTitle => 'চলতি যাত্রা';
+
+  @override
+  String get tripLoadLabel => 'মাল';
+
+  @override
+  String get tripRevenueLabel => 'আয়';
+
+  @override
+  String get costEnergyLabel => 'জ্বালানি';
+
+  @override
+  String get costTollLabel => 'টোল';
+
+  @override
+  String get costCrewLabel => 'চালক ও সহকারী';
+
+  @override
+  String get costMaintenanceLabel => 'রক্ষণাবেক্ষণ';
+
+  @override
+  String get costFinesExpectedLabel => 'জরিমানা (আনুমানিক)';
+
+  @override
+  String get costAccidentExpectedLabel => 'দুর্ঘটনার ঝুঁকি (আনুমানিক)';
+
+  @override
+  String get tripProfitExpectedLabel => 'লাভ (আনুমানিক)';
+
+  @override
+  String get vehicleRecentTripsTitle => 'সাম্প্রতিক যাত্রা';
+
+  @override
+  String get vehicleRecentTripsNote => 'শুধু সাম্প্রতিক যাত্রাগুলো রাখা হয়।';
+
+  @override
+  String get vehicleRecentTripsNone => 'এখনো কোনো যাত্রা শেষ হয়নি।';
+
+  @override
+  String get vehicleSpecsTitle => 'বৈশিষ্ট্য';
+
+  @override
+  String get specPriceLabel => 'দাম';
+
+  @override
+  String get specLegalPayloadLabel => 'আইনসম্মত ভার';
+
+  @override
+  String get specMaxLoadLabel => 'সর্বোচ্চ ভার';
+
+  @override
+  String get specSpeedLabel => 'গড় গতি';
+
+  @override
+  String get specMileageLabel => 'মাইলেজ';
+
+  @override
+  String get specEnergyCostLabel => 'শক্তির খরচ';
+
+  @override
+  String tonsValue(String tons) {
+    return '$tons টন';
+  }
+
+  @override
+  String speedValue(String speed) {
+    return 'ঘণ্টায় $speed কিমি';
+  }
+
+  @override
+  String mileageValue(String km) {
+    return 'লিটারে $km কিমি';
+  }
+
+  @override
+  String perKmValue(String amount) {
+    return 'কিমিতে ৳ $amount';
+  }
+
+  @override
   String vehicleName(String tier) {
     String _temp0 = intl.Intl.selectLogic(tier, {
       'tier1': 'সোনার ভ্যান',

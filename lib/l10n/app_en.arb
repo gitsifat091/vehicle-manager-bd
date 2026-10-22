@@ -153,6 +153,189 @@
     "description": "Temporary button on the garage screen that sends an idle vehicle on the first route. Removed when the assign-route screen exists."
   },
 
+  "vehicleProfitPerHour": "Expected profit {amount} an hour",
+  "@vehicleProfitPerHour": {
+    "description": "On a garage tile: what the vehicle's job is expected to earn per real hour at normal speed. The amount is already formatted as money.",
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "vehicleDetailBack": "Back to garage",
+  "@vehicleDetailBack": {
+    "description": "Button at the top of the vehicle detail that returns to the garage list."
+  },
+
+  "vehicleTierLine": "Tier {tier}",
+  "@vehicleTierLine": {
+    "description": "Under the vehicle name in the detail: its size tier. The number is already formatted.",
+    "placeholders": {
+      "tier": {"type": "String"}
+    }
+  },
+
+  "vehicleGoesHomeNote": "Not assigned any more. It comes home after this trip.",
+  "@vehicleGoesHomeNote": {
+    "description": "In the vehicle detail: the vehicle was unassigned while on a trip. The trip still finishes and is paid."
+  },
+
+  "vehicleUnassignButton": "Unassign",
+  "@vehicleUnassignButton": {
+    "description": "Button in the vehicle detail that takes the route away. A trip on the road still finishes."
+  },
+
+  "vehicleEarningsTitle": "Earnings",
+  "@vehicleEarningsTitle": {
+    "description": "Heading of the vehicle detail section with the expected profit and the sale value."
+  },
+
+  "vehicleProfitPerHourLabel": "Expected profit per hour",
+  "@vehicleProfitPerHourLabel": {
+    "description": "Label of the expected profit per real hour of the vehicle's job."
+  },
+
+  "vehicleProfitPerHourNote": "At normal speed. Turbo Start makes the hours pass faster.",
+  "@vehicleProfitPerHourNote": {
+    "description": "Explains that the expected profit per hour is at 1x speed."
+  },
+
+  "vehicleSaleValueLabel": "Sells for",
+  "@vehicleSaleValueLabel": {
+    "description": "Label of what selling the vehicle would pay."
+  },
+
+  "vehicleCurrentTripTitle": "Current trip",
+  "@vehicleCurrentTripTitle": {
+    "description": "Heading of the vehicle detail section with the money of the trip on the road."
+  },
+
+  "tripLoadLabel": "Load",
+  "@tripLoadLabel": {
+    "description": "Label of the tons a trip carries."
+  },
+
+  "tripRevenueLabel": "Revenue",
+  "@tripRevenueLabel": {
+    "description": "Label of what a trip is paid."
+  },
+
+  "costEnergyLabel": "Fuel",
+  "@costEnergyLabel": {
+    "description": "Label of the fuel or energy cost of a trip."
+  },
+
+  "costTollLabel": "Tolls",
+  "@costTollLabel": {
+    "description": "Label of the bridge and road tolls of a trip."
+  },
+
+  "costCrewLabel": "Crew",
+  "@costCrewLabel": {
+    "description": "Label of the driver and helper wages of a trip."
+  },
+
+  "costMaintenanceLabel": "Maintenance",
+  "@costMaintenanceLabel": {
+    "description": "Label of the wear and repair cost of a trip."
+  },
+
+  "costFinesExpectedLabel": "Fines (expected)",
+  "@costFinesExpectedLabel": {
+    "description": "Label of the expected overload fines of a trip on the road. The real fines are rolled when it arrives."
+  },
+
+  "costAccidentExpectedLabel": "Accident risk (expected)",
+  "@costAccidentExpectedLabel": {
+    "description": "Label of the expected accident cost of a trip on the road. Whether an accident happens is rolled when it arrives."
+  },
+
+  "tripProfitExpectedLabel": "Profit (expected)",
+  "@tripProfitExpectedLabel": {
+    "description": "Label of the expected profit of a trip on the road."
+  },
+
+  "vehicleRecentTripsTitle": "Recent trips",
+  "@vehicleRecentTripsTitle": {
+    "description": "Heading of the list of the vehicle's last finished trips."
+  },
+
+  "vehicleRecentTripsNote": "Only the most recent trips are kept.",
+  "@vehicleRecentTripsNote": {
+    "description": "Under the recent trips heading: older trips are not listed."
+  },
+
+  "vehicleRecentTripsNone": "No finished trips yet.",
+  "@vehicleRecentTripsNone": {
+    "description": "Shown when the vehicle has no finished trip to list."
+  },
+
+  "vehicleSpecsTitle": "Specifications",
+  "@vehicleSpecsTitle": {
+    "description": "Heading of the vehicle detail section with price, payload and speed."
+  },
+
+  "specPriceLabel": "Price",
+  "@specPriceLabel": {
+    "description": "Label of the vehicle's purchase price."
+  },
+
+  "specLegalPayloadLabel": "Legal payload",
+  "@specLegalPayloadLabel": {
+    "description": "Label of the tons the vehicle may carry by law."
+  },
+
+  "specMaxLoadLabel": "Maximum load",
+  "@specMaxLoadLabel": {
+    "description": "Label of the most tons the vehicle can physically carry, overloaded."
+  },
+
+  "specSpeedLabel": "Average speed",
+  "@specSpeedLabel": {
+    "description": "Label of the vehicle's average road speed."
+  },
+
+  "specMileageLabel": "Mileage",
+  "@specMileageLabel": {
+    "description": "Label of how far the vehicle goes on one litre of diesel."
+  },
+
+  "specEnergyCostLabel": "Energy cost",
+  "@specEnergyCostLabel": {
+    "description": "Label of the energy cost per km of a vehicle that does not run on diesel."
+  },
+
+  "tonsValue": "{tons} t",
+  "@tonsValue": {
+    "description": "A weight in tons. The number is already formatted.",
+    "placeholders": {
+      "tons": {"type": "String"}
+    }
+  },
+
+  "speedValue": "{speed} km/h",
+  "@speedValue": {
+    "description": "A speed in kilometres per hour. The number is already formatted.",
+    "placeholders": {
+      "speed": {"type": "String"}
+    }
+  },
+
+  "mileageValue": "{km} km per litre",
+  "@mileageValue": {
+    "description": "Diesel mileage. The number is already formatted.",
+    "placeholders": {
+      "km": {"type": "String"}
+    }
+  },
+
+  "perKmValue": "Tk {amount} per km",
+  "@perKmValue": {
+    "description": "A cost per kilometre in Taka. The number is already formatted, without the currency sign.",
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
   "vehicleName": "{tier, select, tier1{Sonar Van} tier2{Bijli Cargo} tier3{Tuntuni Mini} tier4{Sathi Plus} tier5{Meghna 14} tier6{Jamuna Open} tier7{Karnaphuli 20} tier8{Himaloy Reefer} tier9{Pahari Tipper} tier10{Telrani} tier11{Bongo Mover 40} tier12{Hati Lowbed} other{Vehicle}}",
   "@vehicleName": {
     "description": "The fictional name of a vehicle tier. The tier is 'tier' followed by the number, for example tier4.",
