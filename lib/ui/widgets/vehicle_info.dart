@@ -65,6 +65,16 @@ int? expectedProfitPerHourTk(EconomyConfig config, Vehicle vehicle) {
   ).profitPerRealHour.round();
 }
 
+/// The time from [now] until [end], rounded up to the next whole second, so
+/// a timer never shows 0:00 while time is left (a trip at 20x lasts only a
+/// few seconds). Zero once [end] has passed.
+Duration timeLeftUp(DateTime end, DateTime now) {
+  final micros = end.difference(now).inMicroseconds;
+  if (micros <= 0) return Duration.zero;
+  const perSecond = Duration.microsecondsPerSecond;
+  return Duration(seconds: (micros + perSecond - 1) ~/ perSecond);
+}
+
 /// The moving part of a vehicle's status: a progress bar and the time left
 /// while it is on the road, or the time until it goes again while it waits
 /// for demand. Nothing in the other states.
@@ -95,16 +105,20 @@ class VehicleProgress extends StatelessWidget {
             ),
           ),
           const SizedBox(height: Space.s1),
+          // Past arriveAt the trip waits a few seconds for the next tick to
+          // pay it out. The bar is already full by then.
           Text(
-            l10n.vehicleArrivesIn(
-              fmt.clock(activity.trip!.arriveAt.difference(now)),
-            ),
+            activity.trip!.hasArrivedBy(now)
+                ? l10n.vehicleArriving
+                : l10n.vehicleArrivesIn(
+                    fmt.clock(timeLeftUp(activity.trip!.arriveAt, now)),
+                  ),
             style: GameText.stat(context),
           ),
         ],
       ),
       VehicleStatus.waitingForDemand => Text(
-        l10n.vehicleDepartsIn(fmt.clock(activity.until!.difference(now))),
+        l10n.vehicleDepartsIn(fmt.clock(timeLeftUp(activity.until!, now))),
         style: GameText.stat(context),
       ),
       VehicleStatus.idle ||

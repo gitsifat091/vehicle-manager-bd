@@ -45,6 +45,8 @@
 
   "vehicleArrivesIn": "পৌঁছাতে বাকি {time}",
 
+  "vehicleArriving": "পৌঁছাচ্ছে",
+
   "vehicleDepartsIn": "আবার ছাড়বে {time} পরে",
 
   "starterSaleNote": "এটি আপনার কোম্পানির শুরুর যানবাহন। বিক্রি করলে নির্দিষ্ট {amount} পাবেন।",

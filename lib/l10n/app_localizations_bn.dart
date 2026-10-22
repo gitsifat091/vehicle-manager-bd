@@ -87,6 +87,9 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
+  String get vehicleArriving => 'পৌঁছাচ্ছে';
+
+  @override
   String vehicleDepartsIn(String time) {
     return 'আবার ছাড়বে $time পরে';
   }

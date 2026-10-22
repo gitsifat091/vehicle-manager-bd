@@ -87,6 +87,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get vehicleArriving => 'Arriving';
+
+  @override
   String vehicleDepartsIn(String time) {
     return 'Goes again in $time';
   }

@@ -130,6 +130,66 @@ void main() {
     });
   });
 
+  group('time left', () {
+    double barValue(WidgetTester tester) => tester
+        .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+        .value!;
+
+    testWidgets('under one second left rounds up to 0:01', (tester) async {
+      await openGame(tester);
+      await startStarter(tester);
+
+      // 0.8 of the 84 seconds left.
+      h.clock.advance(const Duration(milliseconds: 83200));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Arrives in 0:01'), findsOneWidget);
+      expect(find.text('Arrives in 0:00'), findsNothing);
+
+      await openTile(tester, 'Sathi Plus');
+      expect(find.text('Arrives in 0:01'), findsOneWidget);
+    });
+
+    testWidgets('a part second rounds up to the next whole second', (
+      tester,
+    ) async {
+      await openGame(tester);
+      await startStarter(tester);
+
+      h.clock.advance(const Duration(milliseconds: 41500));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Arrives in 0:43'), findsOneWidget);
+    });
+
+    testWidgets('past arriveAt but not settled shows Arriving, bar full', (
+      tester,
+    ) async {
+      await openGame(tester);
+      await startStarter(tester);
+
+      // Arrived, but the settle tick has not run yet.
+      h.clock.advance(const Duration(seconds: 85));
+      await tester.pump(const Duration(seconds: 1));
+      expect(h.engine.snapshot.activeTripByVehicle, isNotEmpty);
+      expect(find.text('Arriving'), findsOneWidget);
+      expect(find.textContaining('Arrives in'), findsNothing);
+      expect(barValue(tester), 1);
+
+      await openTile(tester, 'Sathi Plus');
+      expect(find.text('Arriving'), findsOneWidget);
+      expect(barValue(tester), 1);
+    });
+
+    testWidgets('Bangla: Arriving', (tester) async {
+      await openGame(tester, language: 'bn');
+      await tester.tap(find.text('কাজে পাঠান (সাময়িক)'));
+      await h.settle(tester);
+
+      h.clock.advance(const Duration(seconds: 85));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('পৌঁছাচ্ছে'), findsOneWidget);
+    });
+  });
+
   group('vehicle detail', () {
     testWidgets('tapping a tile opens the detail in the page area', (
       tester,

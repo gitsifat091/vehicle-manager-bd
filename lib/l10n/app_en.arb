@@ -132,6 +132,11 @@
     }
   },
 
+  "vehicleArriving": "Arriving",
+  "@vehicleArriving": {
+    "description": "Shown instead of the time left once a trip has reached its destination and is about to be paid out (a few seconds)."
+  },
+
   "vehicleDepartsIn": "Goes again in {time}",
   "@vehicleDepartsIn": {
     "description": "Time until a vehicle waiting for demand departs. The time is already formatted as a timer.",

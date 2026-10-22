@@ -230,6 +230,12 @@ abstract class AppLocalizations {
   /// **'Arrives in {time}'**
   String vehicleArrivesIn(String time);
 
+  /// Shown instead of the time left once a trip has reached its destination and is about to be paid out (a few seconds).
+  ///
+  /// In en, this message translates to:
+  /// **'Arriving'**
+  String get vehicleArriving;
+
   /// Time until a vehicle waiting for demand departs. The time is already formatted as a timer.
   ///
   /// In en, this message translates to:
