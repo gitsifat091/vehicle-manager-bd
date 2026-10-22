@@ -16,12 +16,16 @@ enum ShellDestination { map, garage, finance, settings }
 
 /// The frame around every screen once a game exists.
 ///
-/// Below [Layout.phoneBreakpoint] it is the phone layout: the selected page
-/// fills the body and a bottom bar switches pages. From the breakpoint up a
-/// navigation rail replaces the bar, the map fills the main area and the
-/// selected page opens in a side panel next to it. Choosing the map closes
-/// the panel. Both layouts share the header (company, cash, turbo) and the
-/// selection, so resizing a window across the breakpoint keeps the page.
+/// One layout per [WindowClass]:
+/// - compact: the selected page fills the body and a bottom bar switches
+///   pages
+/// - medium: a navigation rail replaces the bar and the selected page fills
+///   the area beside it (the map too, when it is selected). No side panel
+/// - expanded: a rail, the map in the main area and the selected page in a
+///   side panel next to it. Choosing the map closes the panel
+///
+/// All three share the header (company, cash, turbo) and the selection, so
+/// resizing a window across a breakpoint keeps the page.
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
@@ -32,10 +36,10 @@ class AppShell extends StatefulWidget {
   /// with something to do.
   final ShellDestination initialDestination;
 
-  /// The map area of the wide layout.
+  /// The map, in whichever layout shows it.
   static const mapAreaKey = Key('shell.mapArea');
 
-  /// The side panel of the wide layout.
+  /// The side panel of the expanded layout.
   static const sidePanelKey = Key('shell.sidePanel');
 
   @override
@@ -51,29 +55,35 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) => Scaffold(
-        appBar: const _ShellHeader(),
-        body: Layout.isPhone(constraints.maxWidth)
-            ? _page(context, _selected)
-            : _wideBody(context),
-        bottomNavigationBar: Layout.isPhone(constraints.maxWidth)
-            ? NavigationBar(
-                selectedIndex: _selected.index,
-                onDestinationSelected: _select,
-                destinations: [
-                  for (final d in ShellDestination.values)
-                    NavigationDestination(
-                      icon: Icon(_icon(d)),
-                      label: _label(context, d),
-                    ),
-                ],
-              )
-            : null,
-      ),
+      builder: (context, constraints) {
+        final windowClass = Layout.windowClassOf(constraints.maxWidth);
+        return Scaffold(
+          appBar: const _ShellHeader(),
+          body: switch (windowClass) {
+            WindowClass.compact => _page(context, _selected),
+            WindowClass.medium => _railBody(context, _page(context, _selected)),
+            WindowClass.expanded => _railBody(context, _mapAndPanel(context)),
+          },
+          bottomNavigationBar: windowClass == WindowClass.compact
+              ? NavigationBar(
+                  selectedIndex: _selected.index,
+                  onDestinationSelected: _select,
+                  destinations: [
+                    for (final d in ShellDestination.values)
+                      NavigationDestination(
+                        icon: Icon(_icon(d)),
+                        label: _label(context, d),
+                      ),
+                  ],
+                )
+              : null,
+        );
+      },
     );
   }
 
-  Widget _wideBody(BuildContext context) {
+  /// The rail on the left and [child] in the rest (medium and expanded).
+  Widget _railBody(BuildContext context, Widget child) {
     return Row(
       children: [
         NavigationRail(
@@ -88,30 +98,29 @@ class _AppShellState extends State<AppShell> {
               ),
           ],
         ),
-        const VerticalDivider(width: 1),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, area) => Row(
-              children: [
-                Expanded(
-                  child: KeyedSubtree(
-                    key: AppShell.mapAreaKey,
-                    child: _page(context, ShellDestination.map),
-                  ),
-                ),
-                if (_selected != ShellDestination.map) ...[
-                  const VerticalDivider(width: 1),
-                  SizedBox(
-                    key: AppShell.sidePanelKey,
-                    width: Layout.sidePanelWidth(area.maxWidth),
-                    child: _page(context, _selected),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+        const VerticalDivider(width: Layout.dividerWidth),
+        Expanded(child: child),
       ],
+    );
+  }
+
+  /// The expanded layout's area beside the rail: the map, and the selected
+  /// page in a side panel unless the map itself is selected.
+  Widget _mapAndPanel(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, area) => Row(
+        children: [
+          Expanded(child: _page(context, ShellDestination.map)),
+          if (_selected != ShellDestination.map) ...[
+            const VerticalDivider(width: Layout.dividerWidth),
+            SizedBox(
+              key: AppShell.sidePanelKey,
+              width: Layout.sidePanelWidth(area.maxWidth),
+              child: _page(context, _selected),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -119,6 +128,7 @@ class _AppShellState extends State<AppShell> {
     return switch (d) {
       // Steps 12 (map), 13 (finance) and 14 (settings) replace these.
       ShellDestination.map => ComingLater(
+        key: AppShell.mapAreaKey,
         title: _label(context, d),
         onMap: true,
       ),
