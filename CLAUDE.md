@@ -168,6 +168,7 @@ Out (later): multiplayer, auctions, long-haul contracts, bus mode, waterways, ad
 
 - Read `PROJECT_STATUS.md` at the start of every session. Update it at the end of every milestone or decision: replace the old status, do not append a diary
 - Work in small steps that each end with `flutter analyze` and `flutter test` passing
+- After each step's final commit, with `flutter analyze` clean and all tests passing, push to origin main
 - Write unit tests for every function in `lib/core/economy` and `lib/core/sim` before wiring UI
 - When a balance number needs to change, change the spreadsheet and economy.json, not the Dart code
 - Ask before adding a new package
