@@ -97,15 +97,21 @@ void main(List<String> args) {
   }
   final config = EconomyConfig.parse(jsonText);
 
-  print('First hours simulation, $hours h, '
-      '${args.length > 3 ? 'resale share ${args[3]}' : 'default config'}, '
-      '$seeds seeds');
+  print(
+    'First hours simulation, $hours h, '
+    '${args.length > 3 ? 'resale share ${args[3]}' : 'default config'}, '
+    '$seeds seeds',
+  );
   print('Resale share of price: ${config.settings.resaleShareOfPrice}');
-  print('Spreadsheet (First Hour sheet): 3 purchases in 60 min, 4 in 4 h, '
-      'fleet profit after turbo Tk 2,47,607 per hour at 1x');
+  print(
+    'Spreadsheet (First Hour sheet): 3 purchases in 60 min, 4 in 4 h, '
+    'fleet profit after turbo Tk 2,47,607 per hour at 1x',
+  );
 
-  print('Garage slots: ${config.settings.startingGarageSlots} '
-      '(the free Sathi Plus counts); no selling');
+  print(
+    'Garage slots: ${config.settings.startingGarageSlots} '
+    '(the free Sathi Plus counts); no selling',
+  );
 
   const policies = [
     Policy(
@@ -117,21 +123,21 @@ void main(List<String> args) {
     Policy(
       'B',
       'POLICY B: cheapest useful vehicle, tier 3 and up, Local hauls only '
-      '(no attention needed after buying)',
+          '(no attention needed after buying)',
       minTier: 3,
       includeLine: false,
     ),
     Policy(
       'C',
       'POLICY C: cheapest useful vehicle, tier 3 and up, Local and Line hauls '
-      '(an attentive player sends every Line haul out again at once)',
+          '(an attentive player sends every Line haul out again at once)',
       minTier: 3,
       includeLine: true,
     ),
     Policy(
       'D',
       'POLICY D: highest profit per real hour among affordable useful '
-      'vehicles, all tiers, Local hauls only',
+          'vehicles, all tiers, Local hauls only',
       minTier: 1,
       includeLine: false,
       cheapestFirst: false,
@@ -139,7 +145,7 @@ void main(List<String> args) {
     Policy(
       'E',
       'POLICY E: like D, but with a full garage it sells the worst vehicle '
-      '(by profit per real hour) when a better one is then affordable',
+          '(by profit per real hour) when a better one is then affordable',
       minTier: 1,
       includeLine: false,
       cheapestFirst: false,
@@ -148,7 +154,7 @@ void main(List<String> args) {
     Policy(
       'F',
       'POLICY F: like E, and it also buys an operating permit when that '
-      'unlocks a vehicle with better profit per hour than its worst one',
+          'unlocks a vehicle with better profit per hour than its worst one',
       minTier: 1,
       includeLine: false,
       cheapestFirst: false,
@@ -158,7 +164,7 @@ void main(List<String> args) {
     Policy(
       'G',
       'POLICY G: like E, but Line hauls count too (an attentive player sends '
-      'every Line haul out again at once)',
+          'every Line haul out again at once)',
       minTier: 1,
       includeLine: true,
       cheapestFirst: false,
@@ -167,7 +173,7 @@ void main(List<String> args) {
     Policy(
       'H',
       'POLICY H: like F, but Line hauls count too (an attentive player sends '
-      'every Line haul out again at once)',
+          'every Line haul out again at once)',
       minTier: 1,
       includeLine: true,
       cheapestFirst: false,
@@ -186,12 +192,7 @@ void main(List<String> args) {
 
     final runs = [
       for (var seed = 1; seed <= seeds; seed++)
-        simulate(
-          config: config,
-          seed: seed,
-          hours: hours,
-          policy: policy,
-        ),
+        simulate(config: config, seed: seed, hours: hours, policy: policy),
     ];
 
     print('');
@@ -214,10 +215,7 @@ void main(List<String> args) {
       runs.map((r) => r.longestNoActionMin),
       unit: 'min',
     );
-    summary(
-      'Permits bought',
-      runs.map((r) => r.permitPurchases.length),
-    );
+    summary('Permits bought', runs.map((r) => r.permitPurchases.length));
     summary('Purchases in hour 1', runs.map((r) => r.purchasesBefore(60)));
     summary(
       'Minute the garage cap is reached',
@@ -306,8 +304,10 @@ void main(List<String> args) {
 void printHourly(List<RunResult> runs, int hours) {
   num median(Iterable<num> v) => (v.toList()..sort())[v.length ~/ 2];
   print('Per hour, medians over ${runs.length} seeds');
-  print('  Hour   Income (Tk)   Cash at end (Tk)   Vehicles bought   '
-      'Permits bought   Vehicles sold');
+  print(
+    '  Hour   Income (Tk)   Cash at end (Tk)   Vehicles bought   '
+    'Permits bought   Vehicles sold',
+  );
   for (var h = 0; h < hours; h++) {
     String cell(num v, int width) => money(v.round()).padLeft(width);
     print(
@@ -328,9 +328,8 @@ void summary(String label, Iterable<num?> values, {String unit = ''}) {
     print('  $label: never ($never of ${values.length} runs)');
     return;
   }
-  String f(num v) => unit == 'min' || unit == '%'
-      ? v.toStringAsFixed(1)
-      : money(v.round());
+  String f(num v) =>
+      unit == 'min' || unit == '%' ? v.toStringAsFixed(1) : money(v.round());
   final suffix = unit.isEmpty ? '' : ' $unit';
   final note = never == 0 ? '' : '  [never in $never of ${values.length}]';
   print(
@@ -670,7 +669,8 @@ RunResult simulate({
     final worst = worstId == null ? null : doing[worstId]!;
     if (!free && (!policy.sells || worst == null)) return false;
     for (final c in candidates) {
-      final open = unlocked(c) ||
+      final open =
+          unlocked(c) ||
           (policy.buysPermits &&
               c.vehicle.unlockPermitId != null &&
               !company.permits.contains(c.vehicle.unlockPermitId));
@@ -749,10 +749,11 @@ RunResult simulate({
         final resale = full
             ? resaleValueTk(settings: config.settings, vehicle: worst.vehicle)
             : 0;
-        final unowned = config.permits
-            .where((p) => !company.permits.contains(p.id))
-            .toList()
-          ..sort((a, b) => a.priceTk.compareTo(b.priceTk));
+        final unowned =
+            config.permits
+                .where((p) => !company.permits.contains(p.id))
+                .toList()
+              ..sort((a, b) => a.priceTk.compareTo(b.priceTk));
         for (final permit in unowned) {
           Candidate? target;
           for (final c in candidates) {
@@ -814,8 +815,13 @@ RunResult simulate({
         );
         commit(c.route.id, c.tonsPerGameDay);
         result.purchases.add(
-          Purchase(minute, c.vehicle.tier, c.label, c.vehicle.priceTk,
-              company.cash),
+          Purchase(
+            minute,
+            c.vehicle.tier,
+            c.label,
+            c.vehicle.priceTk,
+            company.cash,
+          ),
         );
         if (checkGarageSlot(
               settings: config.settings,

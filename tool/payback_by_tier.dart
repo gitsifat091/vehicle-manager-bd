@@ -36,8 +36,10 @@ void main() {
     final earning = all.where((c) => c.paybackRealHours != null).toList()
       ..sort((a, b) => payback(a).compareTo(payback(b)));
     if (earning.isEmpty) {
-      print('${vehicle.tier.toString().padLeft(4)}  ${vehicle.name}: loses '
-          'money on every route');
+      print(
+        '${vehicle.tier.toString().padLeft(4)}  ${vehicle.name}: loses '
+        'money on every route',
+      );
       continue;
     }
     // One vehicle must fit in the route's daily demand, or it would starve.
@@ -61,10 +63,12 @@ void main() {
 
     print(row(best));
     if (!identical(fastest, best)) {
-      print('${' ' * 4}  (shorter payback on ${fastest.route.id} '
-          '${fastest.cargo.name}: ${payback(fastest).toStringAsFixed(1)} h, '
-          'but the route holds only ${holds(fastest).toStringAsFixed(1)} '
-          'of this vehicle)');
+      print(
+        '${' ' * 4}  (shorter payback on ${fastest.route.id} '
+        '${fastest.cargo.name}: ${payback(fastest).toStringAsFixed(1)} h, '
+        'but the route holds only ${holds(fastest).toStringAsFixed(1)} '
+        'of this vehicle)',
+      );
     }
   }
 }
