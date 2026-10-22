@@ -69,6 +69,23 @@ class RouteStateRepository extends BoxRepository<RouteState> {
   String keyOf(RouteState item) => item.routeId;
 }
 
+/// One [DayRollup] per game day that had a settled trip, keyed by the day.
+class DayRollupRepository extends BoxRepository<DayRollup> {
+  DayRollupRepository(super.box);
+
+  @override
+  String keyOf(DayRollup item) => keyOfDay(item.gameDay);
+
+  static String keyOfDay(int gameDay) => '$gameDay';
+
+  /// The rollup of [gameDay], or null when no trip was settled that day.
+  DayRollup? forDay(int gameDay) => get(keyOfDay(gameDay));
+
+  /// Every rollup, earliest day first.
+  List<DayRollup> byDay() =>
+      all()..sort((a, b) => a.gameDay.compareTo(b.gameDay));
+}
+
 class TripRepository extends BoxRepository<Trip> {
   TripRepository(super.box);
 

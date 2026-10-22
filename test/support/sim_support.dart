@@ -76,14 +76,24 @@ SimWorld worldOf({
   List<Vehicle> vehicles = const [],
   List<Trip> unsettledTrips = const [],
   List<RouteState> routeStates = const [],
+  List<DayRollup> dayRollups = const [],
 }) {
+  final rollups = {for (final d in dayRollups) d.gameDay: d};
   return SimWorld(
     company: company ?? Company(name: 'Test Ltd', cash: 1500000, createdAt: t0),
     vehicles: vehicles,
     unsettledTrips: unsettledTrips,
     routeStates: routeStates,
+    rollupOf: (day) => rollups[day],
   );
 }
+
+/// Day rollups saved by [applyChange], and the lookup of the world they
+/// started from. Kept beside each world so a long run of changes reads one
+/// map and one lookup instead of a chain of closures, which would overflow
+/// the stack after a few thousand ticks.
+final _savedRollups = Expando<Map<int, DayRollup>>('saved rollups');
+final _firstLookup = Expando<DayRollup? Function(int)>('first lookup');
 
 /// The world after [change] was saved, as the next load would see it.
 SimWorld applyChange(SimWorld world, ChangeSet change) {
@@ -91,6 +101,12 @@ SimWorld applyChange(SimWorld world, ChangeSet change) {
   for (final v in change.vehicles) {
     vehicles[v.id] = v;
   }
+  change.removedVehicleIds.forEach(vehicles.remove);
+  final rollups = {
+    ...?_savedRollups[world],
+    for (final d in change.dayRollups) d.gameDay: d,
+  };
+  final first = _firstLookup[world] ?? world.rollupOf;
   final trips = {for (final t in world.unsettledTrips) t.id: t};
   for (final t in change.trips) {
     trips[t.id] = t;
@@ -99,15 +115,22 @@ SimWorld applyChange(SimWorld world, ChangeSet change) {
   for (final r in change.routeStates) {
     routes[r.routeId] = r;
   }
-  return SimWorld(
+  final next = SimWorld(
     company: world.company.copyWith(
       cash: change.cashAfter,
       completedTrips: change.completedTripsAfter,
+      permits: change.permitsAfter,
+      lifetimeRevenue: change.lifetimeRevenueAfter,
+      lifetimeCosts: change.lifetimeCostsAfter,
     ),
     vehicles: vehicles.values,
     unsettledTrips: trips.values.where((t) => !t.settled),
     routeStates: routes.values,
+    rollupOf: (day) => rollups[day] ?? first(day),
   );
+  _savedRollups[next] = rollups;
+  _firstLookup[next] = first;
+  return next;
 }
 
 /// A Random that returns the given doubles in order and counts the draws.

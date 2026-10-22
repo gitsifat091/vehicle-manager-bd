@@ -1,17 +1,28 @@
 import '../config/economy_config.dart';
+import 'unlock_rules.dart';
 
 enum PurchaseRejectionReason {
+  /// The vehicle is not unlocked yet (a permit or a delivery count). The
+  /// rejection's [PurchaseRejection.unlock] says which.
+  locked,
+
   /// Every garage slot is taken by a vehicle the player owns.
   noFreeGarageSlot,
+
+  /// The company's cash is below the vehicle's price.
+  notEnoughCash,
 }
 
 /// Why a vehicle cannot be bought. [message] is for logs and tests; the UI
 /// maps [reason] to an ARB string.
 class PurchaseRejection {
-  const PurchaseRejection(this.reason, this.message);
+  const PurchaseRejection(this.reason, this.message, {this.unlock});
 
   final PurchaseRejectionReason reason;
   final String message;
+
+  /// Set for [PurchaseRejectionReason.locked]: what unlocks the vehicle.
+  final UnlockRejection? unlock;
 
   @override
   String toString() => 'PurchaseRejection(${reason.name}): $message';
@@ -99,4 +110,43 @@ PurchaseRejection? checkGarageSlot({
     'The garage holds ${garageSlots(settings)} vehicles and all slots are '
     'taken ($vehiclesOwned owned).',
   );
+}
+
+/// Returns why [vehicle] cannot be bought now, or null when it can.
+///
+/// Checked in the order the buy screen explains them: a locked vehicle first
+/// (saving up does not help), then a full garage, then cash.
+PurchaseRejection? checkVehiclePurchase({
+  required EconomySettings settings,
+  required VehicleSpec vehicle,
+  required int cash,
+  required int vehiclesOwned,
+  required int completedTrips,
+  required Set<String> ownedPermits,
+}) {
+  final unlock = checkVehicleUnlocked(
+    vehicle: vehicle,
+    completedTrips: completedTrips,
+    ownedPermits: ownedPermits,
+  );
+  if (unlock != null) {
+    return PurchaseRejection(
+      PurchaseRejectionReason.locked,
+      unlock.message,
+      unlock: unlock,
+    );
+  }
+  final slot = checkGarageSlot(
+    settings: settings,
+    vehiclesOwned: vehiclesOwned,
+  );
+  if (slot != null) return slot;
+  if (cash < vehicle.priceTk) {
+    return PurchaseRejection(
+      PurchaseRejectionReason.notEnoughCash,
+      '${vehicle.name} (tier ${vehicle.tier}) costs Tk ${vehicle.priceTk}, '
+      'cash is Tk $cash.',
+    );
+  }
+  return null;
 }

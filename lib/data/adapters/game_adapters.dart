@@ -21,6 +21,7 @@ void registerGameAdapters(HiveInterface hive) {
   register(TripAdapter());
   register(TripCostsAdapter());
   register(ChangeSetAdapter());
+  register(DayRollupAdapter());
 }
 
 class CompanyAdapter extends TypeAdapter<Company> {
@@ -37,6 +38,8 @@ class CompanyAdapter extends TypeAdapter<Company> {
       completedTrips: (f[3] as int?) ?? 0,
       turboElapsed: Duration(milliseconds: (f[4] as int?) ?? 0),
       permits: {...?(f[5] as List?)?.cast<String>()},
+      lifetimeRevenue: (f[6] as int?) ?? 0,
+      lifetimeCosts: (f[7] as TripCosts?) ?? TripCosts.zero,
     );
   }
 
@@ -50,6 +53,8 @@ class CompanyAdapter extends TypeAdapter<Company> {
       4: obj.turboElapsed.inMilliseconds,
       // Sorted so the same permits always write the same bytes.
       if (obj.permits.isNotEmpty) 5: obj.permits.toList()..sort(),
+      6: obj.lifetimeRevenue,
+      7: obj.lifetimeCosts,
     });
   }
 }
@@ -213,23 +218,62 @@ class ChangeSetAdapter extends TypeAdapter<ChangeSet> {
   @override
   ChangeSet read(BinaryReader reader) {
     final f = readFields(reader);
+    final permits = f[5] as List?;
     return ChangeSet(
       cashAfter: f[0] as int,
       completedTripsAfter: f[1] as int,
       vehicles: (f[2] as List).cast<Vehicle>(),
       trips: (f[3] as List).cast<Trip>(),
       routeStates: (f[4] as List).cast<RouteState>(),
+      permitsAfter: permits == null ? null : {...permits.cast<String>()},
+      removedVehicleIds: [...?(f[6] as List?)?.cast<String>()],
+      lifetimeRevenueAfter: f[7] as int?,
+      lifetimeCostsAfter: f[8] as TripCosts?,
+      dayRollups: [...?(f[9] as List?)?.cast<DayRollup>()],
     );
   }
 
   @override
   void write(BinaryWriter writer, ChangeSet obj) {
+    final permits = obj.permitsAfter;
     writeFields(writer, {
       0: obj.cashAfter,
       1: obj.completedTripsAfter,
       2: obj.vehicles,
       3: obj.trips,
       4: obj.routeStates,
+      // Absent means "unchanged"; an empty list means "owns none".
+      if (permits != null) 5: permits.toList()..sort(),
+      if (obj.removedVehicleIds.isNotEmpty) 6: obj.removedVehicleIds,
+      if (obj.lifetimeRevenueAfter != null) 7: obj.lifetimeRevenueAfter,
+      if (obj.lifetimeCostsAfter != null) 8: obj.lifetimeCostsAfter,
+      if (obj.dayRollups.isNotEmpty) 9: obj.dayRollups,
+    });
+  }
+}
+
+class DayRollupAdapter extends TypeAdapter<DayRollup> {
+  @override
+  final int typeId = HiveTypeIds.dayRollup;
+
+  @override
+  DayRollup read(BinaryReader reader) {
+    final f = readFields(reader);
+    return DayRollup(
+      gameDay: f[0] as int,
+      revenue: f[1] as int,
+      costs: f[2] as TripCosts,
+      trips: f[3] as int,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, DayRollup obj) {
+    writeFields(writer, {
+      0: obj.gameDay,
+      1: obj.revenue,
+      2: obj.costs,
+      3: obj.trips,
     });
   }
 }

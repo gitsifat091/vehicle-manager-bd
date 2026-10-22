@@ -196,4 +196,66 @@ void main() {
     expect(checkGarageSlot(settings: bigger, vehiclesOwned: 6), isNull);
     expect(freeGarageSlots(settings: bigger, vehiclesOwned: 6), 4);
   });
+
+  group('checkVehiclePurchase', () {
+    final config = loadDefaultConfig();
+
+    PurchaseRejection? check(
+      int tier, {
+      int cash = 100000000,
+      int owned = 1,
+      int trips = 0,
+      Set<String> permits = const {},
+    }) => checkVehiclePurchase(
+      settings: config.settings,
+      vehicle: config.vehicleByTier(tier),
+      cash: cash,
+      vehiclesOwned: owned,
+      completedTrips: trips,
+      ownedPermits: permits,
+    );
+
+    test('an open vehicle with a free slot and enough cash can be bought', () {
+      expect(check(4), isNull);
+      expect(check(2, cash: 150000), isNull, reason: 'exactly the price');
+    });
+
+    test('short of cash by one Taka is refused', () {
+      final r = check(2, cash: 149999)!;
+      expect(r.reason, PurchaseRejectionReason.notEnoughCash);
+      expect(r.unlock, isNull);
+    });
+
+    test('a full garage is refused', () {
+      expect(
+        check(4, owned: 6)!.reason,
+        PurchaseRejectionReason.noFreeGarageSlot,
+      );
+    });
+
+    test('a vehicle that needs deliveries is locked until they are done', () {
+      final r = check(3, trips: 4)!;
+      expect(r.reason, PurchaseRejectionReason.locked);
+      expect(r.unlock!.deliveriesNeeded, 5);
+      expect(check(3, trips: 5), isNull);
+    });
+
+    test('a vehicle that needs a permit is locked until it is owned', () {
+      final r = check(5)!;
+      expect(r.reason, PurchaseRejectionReason.locked);
+      expect(r.unlock!.permitId, 'light');
+      expect(check(5, permits: {'light'}), isNull);
+    });
+
+    test('locked comes before a full garage, which comes before cash', () {
+      expect(
+        check(5, cash: 0, owned: 6)!.reason,
+        PurchaseRejectionReason.locked,
+      );
+      expect(
+        check(4, cash: 0, owned: 6)!.reason,
+        PurchaseRejectionReason.noFreeGarageSlot,
+      );
+    });
+  });
 }

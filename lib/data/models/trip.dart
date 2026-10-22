@@ -23,6 +23,16 @@ class TripCosts {
     );
   }
 
+  /// No costs, the start of a sum.
+  static const zero = TripCosts(
+    energy: 0,
+    toll: 0,
+    crew: 0,
+    maintenance: 0,
+    fines: 0,
+    accident: 0,
+  );
+
   final int energy;
   final int toll;
   final int crew;
@@ -31,6 +41,16 @@ class TripCosts {
   final int accident;
 
   int get total => energy + toll + crew + maintenance + fines + accident;
+
+  /// Part by part sum, for lifetime totals and day rollups.
+  TripCosts operator +(TripCosts other) => TripCosts(
+    energy: energy + other.energy,
+    toll: toll + other.toll,
+    crew: crew + other.crew,
+    maintenance: maintenance + other.maintenance,
+    fines: fines + other.fines,
+    accident: accident + other.accident,
+  );
 
   @override
   bool operator ==(Object other) =>

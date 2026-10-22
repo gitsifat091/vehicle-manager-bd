@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vehicle_manager_bd/core/config/economy_config.dart';
+import 'package:vehicle_manager_bd/core/economy/purchase_rules.dart';
 import 'package:vehicle_manager_bd/core/economy/trip_planner.dart';
+import 'package:vehicle_manager_bd/core/economy/unlock_rules.dart';
 import 'package:vehicle_manager_bd/core/sim/dispatch.dart';
 import 'package:vehicle_manager_bd/data/models/models.dart';
 import 'package:vehicle_manager_bd/data/repositories/save_database.dart';
@@ -519,6 +521,173 @@ void main() {
       clock.advance(const Duration(seconds: 100));
       await engine.tick();
       expect(heard, 1);
+    });
+
+    test('lifetime totals and the day rollup count every paid trip', () async {
+      // 10 minutes: seven 84 s trips arrive.
+      clock.advance(const Duration(minutes: 10));
+      await engine.tick();
+      final company = db.company.load()!;
+      expect(company.completedTrips, 7);
+      expect(company.lifetimeProfit, 7 * profitPerTrip);
+      expect(company.lifetimeRevenue, 7 * 2693);
+
+      final days = db.dayRollups.all();
+      expect(days.fold<int>(0, (s, d) => s + d.trips), 7);
+      expect(days.fold<int>(0, (s, d) => s + d.profit), 7 * profitPerTrip);
+      expect(
+        days.fold<int>(0, (s, d) => s + d.revenue),
+        company.lifetimeRevenue,
+      );
+    });
+  });
+
+  group('buying', () {
+    // Enough cash that only the rule under test can refuse.
+    GameEngine richEngine() => makeEngine(
+      config: quietConfig((j) => j['settings']['startingCash'] = 100000000),
+    );
+
+    test('a vehicle: cash down by its price, idle in the garage', () async {
+      await engine.startNewGame('Test Ltd');
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      final outcome = await engine.buyVehicle(2);
+
+      expect(outcome.bought, true);
+      expect(outcome.rejection, isNull);
+      final vehicle = outcome.vehicle!;
+      expect(vehicle.tier, 2);
+      expect(vehicle.isAssigned, false);
+      expect(vehicle.purchasedAt, clock.now());
+      expect(db.vehicles.get(vehicle.id), vehicle);
+      expect(db.vehicles.count, 2, reason: 'the starter and the new one');
+      expect(db.company.load()!.cash, 1500000 - 150000);
+      expect(db.pending.load(), isNull);
+      expect(heard, 1);
+      expect(engine.snapshot.vehicles, hasLength(2));
+    });
+
+    test('the new vehicle can be sent to work', () async {
+      await engine.startNewGame('Test Ltd');
+      final vehicle = (await engine.buyVehicle(4)).vehicle!;
+      final outcome = await engine.assignVehicle(
+        vehicle.id,
+        routeId: 'R02',
+        cargoName: 'General dry',
+      );
+      expect(outcome.plan, isA<DispatchReady>());
+    });
+
+    test('a locked vehicle is refused and nothing is saved', () async {
+      await engine.startNewGame('Test Ltd');
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      final outcome = await engine.buyVehicle(3);
+
+      expect(outcome.bought, false);
+      expect(outcome.rejection!.reason, PurchaseRejectionReason.locked);
+      expect(outcome.rejection!.unlock!.deliveriesNeeded, 5);
+      expect(db.vehicles.count, 1);
+      expect(db.company.load()!.cash, 1500000);
+      expect(heard, 0);
+    });
+
+    test('a full garage is refused', () async {
+      await engine.startNewGame('Test Ltd');
+      for (var i = 0; i < 5; i++) {
+        expect((await engine.buyVehicle(1)).bought, true, reason: 'van $i');
+      }
+      final outcome = await engine.buyVehicle(1);
+      expect(
+        outcome.rejection!.reason,
+        PurchaseRejectionReason.noFreeGarageSlot,
+      );
+      expect(db.vehicles.count, 6);
+      expect(db.company.load()!.cash, 1500000 - 5 * 20000);
+    });
+
+    test('a vehicle the cash does not cover is refused', () async {
+      await engine.startNewGame('Test Ltd');
+      expect((await engine.buyVehicle(4)).bought, true);
+      // Tk 2 lakh left, a Sathi Plus costs Tk 13 lakh.
+      final outcome = await engine.buyVehicle(4);
+      expect(outcome.rejection!.reason, PurchaseRejectionReason.notEnoughCash);
+      expect(db.company.load()!.cash, 200000);
+      expect(db.vehicles.count, 2);
+    });
+
+    test('a permit: cash down once, and its vehicles unlock', () async {
+      engine.dispose();
+      engine = richEngine();
+      await engine.startNewGame('Test Ltd');
+      expect(
+        (await engine.buyVehicle(5)).rejection!.reason,
+        PurchaseRejectionReason.locked,
+      );
+      var heard = 0;
+      engine.addListener(() => heard++);
+
+      expect(await engine.buyPermit('light'), isNull);
+
+      final company = db.company.load()!;
+      expect(company.permits, {'light'});
+      expect(company.cash, 100000000 - 400000);
+      expect(db.pending.load(), isNull);
+      expect(heard, 1);
+      expect(engine.snapshot.permits, {'light'});
+      expect((await engine.buyVehicle(5)).bought, true);
+      expect(db.company.load()!.cash, 100000000 - 400000 - 2500000);
+    });
+
+    test('a permit is bought only once', () async {
+      engine.dispose();
+      engine = richEngine();
+      await engine.startNewGame('Test Ltd');
+      await engine.buyPermit('medium');
+      final again = await engine.buyPermit('medium');
+      expect(again!.reason, PermitRejectionReason.alreadyOwned);
+      expect(db.company.load()!.cash, 100000000 - 500000);
+    });
+
+    test('a permit the cash does not cover is refused', () async {
+      engine.dispose();
+      engine = makeEngine(
+        config: quietConfig((j) => j['settings']['startingCash'] = 399999),
+      );
+      await engine.startNewGame('Test Ltd');
+      final refused = await engine.buyPermit('light');
+      expect(refused!.reason, PermitRejectionReason.notEnoughCash);
+      expect(db.company.load()!.permits, isEmpty);
+      expect(db.company.load()!.cash, 399999);
+    });
+
+    test('buying a permit keeps the cash a settled trip just paid', () async {
+      await engine.startNewGame('Test Ltd');
+      await finishTurbo();
+      final starter = db.vehicles.all().single;
+      await engine.assignVehicle(
+        starter.id,
+        routeId: 'R01',
+        cargoName: 'General dry',
+      );
+      clock.advance(const Duration(seconds: 100));
+      await engine.tick();
+      final cash = db.company.load()!.cash;
+      expect(cash, 1500000 + profitPerTrip);
+
+      expect(await engine.buyPermit('light'), isNull);
+      final company = db.company.load()!;
+      expect(company.cash, cash - 400000);
+      expect(company.completedTrips, 1, reason: 'unchanged by the purchase');
+      expect(company.lifetimeRevenue, 2693, reason: 'unchanged too');
+    });
+
+    test('without a game a purchase is a programming error', () async {
+      expect(() => engine.buyVehicle(4), throwsStateError);
+      expect(() => engine.buyPermit('light'), throwsStateError);
     });
   });
 

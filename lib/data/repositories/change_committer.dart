@@ -9,11 +9,16 @@ enum CommitStep {
   /// The whole change set is on disk as the pending record.
   pendingWritten,
 
-  /// The company has its new absolute cash and trip count.
+  /// The company has its new absolute cash, trip count, permits and lifetime
+  /// totals.
   companySaved,
   vehiclesSaved,
+
+  /// Sold vehicles are deleted.
+  vehiclesRemoved,
   tripsSaved,
   routeStatesSaved,
+  dayRollupsSaved,
 
   /// The pending record is removed. The change is complete.
   pendingCleared,
@@ -23,7 +28,8 @@ enum CommitStep {
 /// trip twice or lose a payout.
 ///
 /// 1. Write the change set as the pending record, in one put.
-/// 2. Apply it: company cash, vehicles, trips, route states.
+/// 2. Apply it: company, vehicles (new, changed, removed), trips, route
+///    states, day rollups.
 /// 3. Clear the pending record.
 ///
 /// Every value in a change set is absolute (the new cash total, the whole
@@ -71,15 +77,22 @@ class ChangeCommitter {
         company.copyWith(
           cash: change.cashAfter,
           completedTrips: change.completedTripsAfter,
+          permits: change.permitsAfter,
+          lifetimeRevenue: change.lifetimeRevenueAfter,
+          lifetimeCosts: change.lifetimeCostsAfter,
         ),
       );
     }
     await afterStep?.call(CommitStep.companySaved);
     await _db.vehicles.putAll(change.vehicles);
     await afterStep?.call(CommitStep.vehiclesSaved);
+    await _db.vehicles.box.deleteAll(change.removedVehicleIds);
+    await afterStep?.call(CommitStep.vehiclesRemoved);
     await _db.trips.putAll(change.trips);
     await afterStep?.call(CommitStep.tripsSaved);
     await _db.routeStates.putAll(change.routeStates);
     await afterStep?.call(CommitStep.routeStatesSaved);
+    await _db.dayRollups.putAll(change.dayRollups);
+    await afterStep?.call(CommitStep.dayRollupsSaved);
   }
 }

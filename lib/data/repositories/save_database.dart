@@ -5,7 +5,7 @@ import '../models/models.dart';
 import 'app_settings_repository.dart';
 import 'repositories.dart';
 
-/// The local save: six Hive boxes and a repository for each, plus a seventh
+/// The local save: seven Hive boxes and a repository for each, plus an eighth
 /// for the device settings (language, theme) that a new game does not erase.
 ///
 /// Hive must already point at a folder. Tests call [openAt] with a temp
@@ -20,6 +20,7 @@ class SaveDatabase {
     required this.terminals,
     required this.routeStates,
     required this.trips,
+    required this.dayRollups,
     required this.pending,
     required this.settings,
   });
@@ -29,6 +30,7 @@ class SaveDatabase {
   static const terminalsBox = 'terminals';
   static const routeStatesBox = 'route_states';
   static const tripsBox = 'trips';
+  static const dayRollupsBox = 'day_rollups';
   static const pendingBox = 'pending_change';
   static const settingsBox = 'app_settings';
 
@@ -37,6 +39,7 @@ class SaveDatabase {
   final TerminalRepository terminals;
   final RouteStateRepository routeStates;
   final TripRepository trips;
+  final DayRollupRepository dayRollups;
   final PendingChangeRepository pending;
 
   /// Device settings. Not part of a game, so [clearAll] leaves them alone.
@@ -59,6 +62,9 @@ class SaveDatabase {
         await Hive.openBox<RouteState>(routeStatesBox),
       ),
       trips: TripRepository(await Hive.openBox<Trip>(tripsBox)),
+      dayRollups: DayRollupRepository(
+        await Hive.openBox<DayRollup>(dayRollupsBox),
+      ),
       pending: PendingChangeRepository(
         await Hive.openBox<ChangeSet>(pendingBox),
       ),
@@ -74,6 +80,7 @@ class SaveDatabase {
     await terminals.clear();
     await routeStates.clear();
     await trips.clear();
+    await dayRollups.clear();
     await pending.box.clear();
   }
 
@@ -84,6 +91,7 @@ class SaveDatabase {
     await terminals.box.close();
     await routeStates.box.close();
     await trips.box.close();
+    await dayRollups.box.close();
     await pending.box.close();
     await settings.box.close();
   }

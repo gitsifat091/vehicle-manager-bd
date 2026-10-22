@@ -108,6 +108,107 @@ void main() {
     });
   });
 
+  group('lifetime totals and day rollups', () {
+    final world = worldOf(vehicles: [assignedVehicle()]);
+    final now = t0.add(const Duration(hours: 8));
+    final change = simulator().advance(world: world, now: now, turboSpeed: 1);
+    final settled = change.settledTrips.toList();
+    // A game day is 24 real minutes at 1x.
+    int dayOf(DateTime t) => t.difference(t0).inMicroseconds ~/ 1440e6;
+
+    test('the lifetime totals add up every settled trip', () {
+      expect(
+        change.lifetimeRevenueAfter,
+        settled.fold<int>(0, (s, t) => s + t.revenue),
+      );
+      expect(
+        change.lifetimeCostsAfter,
+        settled.fold(TripCosts.zero, (s, t) => s + t.costs),
+      );
+      expect(
+        change.lifetimeRevenueAfter! - change.lifetimeCostsAfter!.total,
+        342 * profitPerTrip,
+      );
+    });
+
+    test('each trip counts in the day it arrived, 20 days in 8 hours', () {
+      final byDay = {for (final d in change.dayRollups) d.gameDay: d};
+      expect(byDay.keys.toSet(), {for (var d = 0; d < 20; d++) d});
+      for (final day in byDay.values) {
+        final trips = settled.where((t) => dayOf(t.arriveAt) == day.gameDay);
+        expect(day.trips, trips.length, reason: 'day ${day.gameDay}');
+        expect(
+          day.revenue,
+          trips.fold<int>(0, (s, t) => s + t.revenue),
+          reason: 'day ${day.gameDay}',
+        );
+        expect(day.profit, trips.length * profitPerTrip);
+      }
+      expect(change.dayRollups.fold<int>(0, (s, d) => s + d.trips), 342);
+    });
+
+    test('adds to the totals and the rollup already saved', () {
+      const earlier = TripCosts(
+        energy: 100,
+        toll: 0,
+        crew: 0,
+        maintenance: 0,
+        fines: 0,
+        accident: 0,
+      );
+      final saved = worldOf(
+        company: Company(
+          name: 'Test Ltd',
+          cash: 1500000,
+          createdAt: t0,
+          lifetimeRevenue: 5000,
+          lifetimeCosts: earlier,
+        ),
+        vehicles: [assignedVehicle()],
+        dayRollups: [
+          const DayRollup(gameDay: 0, revenue: 1000, costs: earlier, trips: 4),
+        ],
+      );
+      final more = simulator().advance(world: saved, now: now, turboSpeed: 1);
+      expect(more.lifetimeRevenueAfter, 5000 + change.lifetimeRevenueAfter!);
+      expect(more.lifetimeCostsAfter, earlier + change.lifetimeCostsAfter!);
+      final day0 = more.dayRollups.firstWhere((d) => d.gameDay == 0);
+      final fresh = change.dayRollups.firstWhere((d) => d.gameDay == 0);
+      expect(day0.trips, 4 + fresh.trips);
+      expect(day0.revenue, 1000 + fresh.revenue);
+    });
+
+    test('nothing settled leaves the totals and rollups alone', () {
+      final change = simulator().advance(
+        world: world,
+        now: t0.add(const Duration(seconds: 30)),
+        turboSpeed: 1,
+      );
+      expect(change.trips, hasLength(1), reason: 'one trip departed');
+      expect(change.settledTrips, isEmpty);
+      expect(change.lifetimeRevenueAfter, isNull);
+      expect(change.lifetimeCostsAfter, isNull);
+      expect(change.dayRollups, isEmpty);
+    });
+
+    test('the turbo bonus moves the day boundary earlier', () {
+      // 10 minutes of bonus: day 1 starts 14 real minutes in, not 24.
+      final change = simulator().advance(
+        world: world,
+        now: t0.add(const Duration(minutes: 20)),
+        turboSpeed: 1,
+        turboBonus: const Duration(minutes: 10),
+      );
+      final boundary = t0.add(const Duration(minutes: 14));
+      final before = change.settledTrips.where(
+        (t) => t.arriveAt.isBefore(boundary),
+      );
+      final byDay = {for (final d in change.dayRollups) d.gameDay: d};
+      expect(byDay[0]!.trips, before.length);
+      expect(byDay[1]!.trips, change.settledTrips.length - before.length);
+    });
+  });
+
   group('demand', () {
     test('runs out, the vehicle waits, and demand resets the next day', () {
       // 3 t a day and 1.5 t a trip: two trips per game day.

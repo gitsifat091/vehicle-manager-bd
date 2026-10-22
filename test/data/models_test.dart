@@ -176,5 +176,60 @@ void main() {
       expect(costs.accident, 1600);
       expect(costs.total, 12380);
     });
+
+    test('TripCosts add part by part, from zero', () {
+      final costs = sampleTrip().costs;
+      expect(TripCosts.zero.total, 0);
+      expect(TripCosts.zero + costs, costs);
+      final twice = costs + costs;
+      expect(twice.energy, 15000);
+      expect(twice.toll, 1600);
+      expect(twice.accident, 3200);
+      expect(twice.total, 2 * 12380);
+    });
+  });
+
+  group('DayRollup', () {
+    test('starts empty', () {
+      const day = DayRollup(gameDay: 3);
+      expect(day.revenue, 0);
+      expect(day.costs, TripCosts.zero);
+      expect(day.trips, 0);
+      expect(day.profit, 0);
+    });
+
+    test('add counts a trip once, keeping the day', () {
+      final trip = sampleTrip();
+      final day = const DayRollup(gameDay: 3).add(trip).add(trip);
+      expect(day.gameDay, 3);
+      expect(day.revenue, 2 * 36375);
+      expect(day.costs.total, 2 * 12380);
+      expect(day.trips, 2);
+      expect(day.profit, 2 * trip.profit);
+    });
+
+    test('equality covers every field', () {
+      final trip = sampleTrip();
+      final a = const DayRollup(gameDay: 1).add(trip);
+      expect(a, const DayRollup(gameDay: 1).add(trip));
+      expect(a == const DayRollup(gameDay: 2).add(trip), false);
+      expect(a == const DayRollup(gameDay: 1), false);
+    });
+  });
+
+  group('Company lifetime totals', () {
+    test('start at zero and survive copyWith', () {
+      final c = Company.newGame(config: config, name: 'A', now: t0);
+      expect(c.lifetimeRevenue, 0);
+      expect(c.lifetimeCosts, TripCosts.zero);
+      expect(c.lifetimeProfit, 0);
+
+      final costs = sampleTrip().costs;
+      final later = c.copyWith(lifetimeRevenue: 36375, lifetimeCosts: costs);
+      expect(later.lifetimeProfit, 36375 - 12380);
+      expect(later.copyWith(cash: 1).lifetimeCosts, costs);
+      expect(later == c, false, reason: 'equality includes the totals');
+      expect(later, c.copyWith(lifetimeRevenue: 36375, lifetimeCosts: costs));
+    });
   });
 }

@@ -175,6 +175,7 @@ void main() {
       RouteState(routeId: 'R01', demandRemainingT: 1, updatedAt: t0),
     );
     await db.trips.put(sampleTrip());
+    await db.dayRollups.put(const DayRollup(gameDay: 0, trips: 1));
 
     await db.clearAll();
 
@@ -183,6 +184,24 @@ void main() {
     expect(db.terminals.count, 0);
     expect(db.routeStates.count, 0);
     expect(db.trips.count, 0);
+    expect(db.dayRollups.count, 0);
+  });
+
+  group('DayRollupRepository', () {
+    test('is keyed by game day and lists days in order', () async {
+      await db.dayRollups.putAll([
+        const DayRollup(gameDay: 12, trips: 3),
+        const DayRollup(gameDay: 2, trips: 1),
+        const DayRollup(gameDay: 7, trips: 2),
+      ]);
+      expect(db.dayRollups.forDay(7)!.trips, 2);
+      expect(db.dayRollups.forDay(8), isNull);
+      expect(db.dayRollups.byDay().map((d) => d.gameDay), [2, 7, 12]);
+
+      await db.dayRollups.put(const DayRollup(gameDay: 7, trips: 5));
+      expect(db.dayRollups.count, 3, reason: 'the same day is replaced');
+      expect(db.dayRollups.forDay(7)!.trips, 5);
+    });
   });
 
   group('newId', () {

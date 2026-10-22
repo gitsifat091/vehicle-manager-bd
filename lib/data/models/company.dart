@@ -1,4 +1,5 @@
 import '../../core/config/economy_config.dart';
+import 'trip.dart';
 
 /// The player's company. One per save.
 ///
@@ -12,6 +13,8 @@ class Company {
     this.completedTrips = 0,
     this.turboElapsed = Duration.zero,
     Set<String> permits = const {},
+    this.lifetimeRevenue = 0,
+    this.lifetimeCosts = TripCosts.zero,
   }) : createdAt = createdAt.toUtc(),
        permits = Set.unmodifiable(permits);
 
@@ -46,12 +49,24 @@ class Company {
   /// removed. Empty in saves from before permits existed.
   final Set<String> permits;
 
+  /// Revenue of every trip settled so far, in whole Taka. Kept here so the
+  /// finance screen does not need the trip history, which is pruned. Zero in
+  /// saves from before it existed.
+  final int lifetimeRevenue;
+
+  /// Final costs of every trip settled so far, part by part.
+  final TripCosts lifetimeCosts;
+
+  int get lifetimeProfit => lifetimeRevenue - lifetimeCosts.total;
+
   Company copyWith({
     String? name,
     int? cash,
     int? completedTrips,
     Duration? turboElapsed,
     Set<String>? permits,
+    int? lifetimeRevenue,
+    TripCosts? lifetimeCosts,
   }) {
     return Company(
       name: name ?? this.name,
@@ -60,6 +75,8 @@ class Company {
       completedTrips: completedTrips ?? this.completedTrips,
       turboElapsed: turboElapsed ?? this.turboElapsed,
       permits: permits ?? this.permits,
+      lifetimeRevenue: lifetimeRevenue ?? this.lifetimeRevenue,
+      lifetimeCosts: lifetimeCosts ?? this.lifetimeCosts,
     );
   }
 
@@ -72,7 +89,9 @@ class Company {
       other.completedTrips == completedTrips &&
       other.turboElapsed == turboElapsed &&
       other.permits.length == permits.length &&
-      other.permits.containsAll(permits);
+      other.permits.containsAll(permits) &&
+      other.lifetimeRevenue == lifetimeRevenue &&
+      other.lifetimeCosts == lifetimeCosts;
 
   @override
   int get hashCode => Object.hash(
@@ -82,6 +101,8 @@ class Company {
     completedTrips,
     turboElapsed,
     Object.hashAllUnordered(permits),
+    lifetimeRevenue,
+    lifetimeCosts,
   );
 
   @override

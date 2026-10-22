@@ -13,14 +13,23 @@ class SimWorld {
     required Iterable<Vehicle> vehicles,
     required Iterable<Trip> unsettledTrips,
     required Iterable<RouteState> routeStates,
+    DayRollup? Function(int gameDay)? rollupOf,
   }) : vehicles = List.unmodifiable(vehicles),
        unsettledTrips = List.unmodifiable(unsettledTrips),
-       routeStates = List.unmodifiable(routeStates);
+       routeStates = List.unmodifiable(routeStates),
+       rollupOf = rollupOf ?? _noRollup;
 
   final Company company;
   final List<Vehicle> vehicles;
   final List<Trip> unsettledTrips;
   final List<RouteState> routeStates;
+
+  /// The saved rollup of a game day, or null when nothing was settled that
+  /// day yet. A lookup rather than a list, because the history grows long
+  /// and a settlement only touches a few days.
+  final DayRollup? Function(int gameDay) rollupOf;
+
+  static DayRollup? _noRollup(int gameDay) => null;
 }
 
 /// The result of asking one vehicle to depart now.
@@ -90,6 +99,9 @@ class GameSimulator {
     final blocked = <String>{};
     var cash = world.company.cash;
     var completed = world.company.completedTrips;
+    var lifetimeRevenue = world.company.lifetimeRevenue;
+    var lifetimeCosts = world.company.lifetimeCosts;
+    final rollups = <int, DayRollup>{};
 
     while (true) {
       final arrival = _nextArrival(open, now);
@@ -114,9 +126,17 @@ class GameSimulator {
           trip: arrival!,
           random: random,
         );
-        changedTrips[settled.trip.id] = settled.trip;
-        cash += settled.trip.profit;
+        final paid = settled.trip;
+        changedTrips[paid.id] = paid;
+        cash += paid.profit;
         completed++;
+        lifetimeRevenue += paid.revenue;
+        lifetimeCosts += paid.costs;
+        // The trip counts towards the game day it arrived in.
+        final day = calendar.dayIndex(paid.arriveAt);
+        rollups[day] =
+            (rollups[day] ?? world.rollupOf(day) ?? DayRollup(gameDay: day))
+                .add(paid);
         final vehicle = vehicles[arrival.vehicleId];
         if (vehicle != null && vehicle.isAssigned) {
           vehicles[vehicle.id] = vehicle.withAvailableAt(arrival.arriveAt);
@@ -150,12 +170,16 @@ class GameSimulator {
       }
     }
 
+    final anySettled = rollups.isNotEmpty;
     return ChangeSet(
       cashAfter: cash,
       completedTripsAfter: completed,
       vehicles: [for (final id in changedVehicles) vehicles[id]!],
       trips: changedTrips.values.toList(),
       routeStates: [for (final id in changedRoutes) routeStates[id]!],
+      lifetimeRevenueAfter: anySettled ? lifetimeRevenue : null,
+      lifetimeCostsAfter: anySettled ? lifetimeCosts : null,
+      dayRollups: rollups.values.toList(),
     );
   }
 

@@ -6,10 +6,10 @@ Last updated: 2026-10-22
 
 ## Where we are
 
-- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 450 tests pass, `flutter analyze` is clean. Economy config is version 0.4
-- Milestone 4 is in progress: steps 1 to 6 (and 5b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
+- Milestones 1, 2 and 3 are done, plus the turbo game clock, the tier 1 route limit, the 6-slot garage cap, selling, vehicle unlocks and operating permits as rules, and `Company.permits` (decisions below). 499 tests pass, `flutter analyze` is clean. Economy config is version 0.4
+- Milestone 4 is in progress: steps 1 to 7 (and 5b) are done (see the step list below). The app runs: new-game screen, then the shell (header with company, cash and turbo badge; Map, Garage, Finance, Settings). The garage lists the vehicles with a temporary "Start working" button; map, finance and settings are placeholders
 - Balance work is paused until Milestone 5 (see open question 4)
-- Next: step 7, engine: buy vehicle and buy permit
+- Next: step 8, engine: selling and the swap hint, trip pruning
 
 ## Milestones
 
@@ -37,8 +37,8 @@ Each step ends with `flutter analyze` and `flutter test` passing, and one commit
 | 5 | Responsive shell: bottom bar under 600 px, rail and detail panel from 600 px | Done |
 | 5b | Medium layout: rail and full-width page from 600 to 840 px, map and side panel only from 840 px | Done |
 | 6 | `route_economics.dart` in core for the demand preview (moved from the tools) | Done |
-| 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | Next |
-| 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | |
+| 7 | Engine: buy vehicle, buy permit. `ChangeSet` gets `permitsAfter` and `removedVehicleIds`. Settlement `ChangeSet` also updates lifetime totals and the per-game-day rollup | Done |
+| 8 | Engine: selling (unassign, wait, sell) and the swap hint from `swapPaybackHours`. Prune settled trips older than the last 500 only after they are counted | Next |
 | 9 | Garage screen and vehicle detail | |
 | 10 | Assign route and cargo (removes the temporary button) | |
 | 11a | Buy screen, static: tiers, locks, slot count, demand preview | |
@@ -72,7 +72,7 @@ Tech
 - Because the bonus changes over time, a route's day cannot be recomputed from its timestamp. `RouteState.gameDay` (adapter field 3, optional) stores it; old saves without it fall back to the day of `updatedAt`
 - A wait for the next day is exact when the boundary is already past; a boundary still ahead is shortened by the current turbo speed, and an early wake-up just waits again
 - `lib/core/sim` imports the pure Dart data models (no Flutter, no Hive). Accepted
-- Added fields: `Vehicle.availableAt`, `Trip.vehicleTier`, `Company.turboElapsed`, `RouteState.gameDay`. Config only: `vehicles[].allowedRoutes`, `vehicles[].unlockPermit`, `vehicles[].unlockDeliveries` (replaced the free-text `unlock`), `permits`, `settings.startingGarageSlots`, `settings.resaleShareOfPrice`
+- Added fields: `Vehicle.availableAt`, `Trip.vehicleTier`, `Company.turboElapsed`, `RouteState.gameDay`, `Company.lifetimeRevenue` and `lifetimeCosts` (adapter fields 6 and 7, default zero), `ChangeSet` fields 5 to 9 (`permitsAfter`, `removedVehicleIds`, `lifetimeRevenueAfter`, `lifetimeCostsAfter`, `dayRollups`; absent in an old pending record means unchanged). New model `DayRollup` (type id 7) in its own `day_rollups` box. Config only: `vehicles[].allowedRoutes`, `vehicles[].unlockPermit`, `vehicles[].unlockDeliveries` (replaced the free-text `unlock`), `permits`, `settings.startingGarageSlots`, `settings.resaleShareOfPrice`
 
 Milestone 4
 - All user text is in ARB from the start (`lib/l10n`, built-in gen-l10n, no new package). Vehicle, route and cargo names are ARB select messages keyed by tier, route id and camel-cased cargo name; `test/l10n/config_names_test.dart` fails if the config gains one without a translation. Milestone 7 is the Bangla review, not the first translation
@@ -80,6 +80,8 @@ Milestone 4
 - `settings.starterVehicleTier` = 4 (sheet: Settings row 29). The starter is granted by `startNewGame`, unassigned. The company is written last, so a half-made game looks like no game
 - No new packages: plain Navigator, no go_router. The map layout goes in `assets/config/map_layout.json`, not in `economy.json` (it is not economy data)
 - Demand preview economics live in `lib/core/economy/route_economics.dart`: `RouteEconomics` (profit per real hour at 1x, tons per game day, payback, how many of the vehicle a route holds), `bestCargoOn` and `bestCargoPerRoute` (the cargo with the highest profit per hour), and `RouteDemand` (spare demand against the fleet's tons per game day, `fits`, `vehiclesThatFit`). Legal payload, expected fines and accidents, the sheet's payback definition. Both tools use it, so the pacing figures and the buy screen share one formula; their output was unchanged by the move. A game day is 24 game hours (`gameHoursPerDay`)
+- Buying (step 7): `GameEngine.buyVehicle(tier)` and `buyPermit(id)` each save one `ChangeSet` through the committer, so a purchase is crash safe like a settlement. A vehicle arrives unassigned. `checkVehiclePurchase` (core) refuses in the order the buy screen explains: locked (permit or deliveries), then a full garage, then cash. A refusal saves nothing and does not notify. Buying with no game throws a `StateError`
+- Settlement totals: every settled trip adds to `Company.lifetimeRevenue` and `lifetimeCosts` (a `TripCosts`, so the finance screen can split costs by part) and to the `DayRollup` of the game day it arrived in (`GameCalendar.dayIndex`, with the turbo bonus). Both are absolute values in the same `ChangeSet` as the payout. The simulator reads saved rollups through `SimWorld.rollupOf`, a lookup, so the history is never copied per tick. Vehicle and permit purchases are not in the rollups (they are spending, not trip results)
 - The overload slider stays out of M4 (assign uses 0 overload). Trip history: keep the last 500 settled trips, plus lifetime totals on `Company` and a per-game-day rollup (revenue, costs, trips) for the finance screen, both updated inside the settlement `ChangeSet`; pruning only deletes trips that are already counted
 - Shell (`lib/ui/shell/app_shell.dart`): four places, Map, Garage, Finance, Settings (`ShellDestination`). Three layouts by `WindowClass`, breakpoints `Layout.mediumBreakpoint` (600) and `Layout.expandedBreakpoint` (840) in `lib/ui/layout.dart`. Compact (under 600): the page fills the body with a bottom bar. Medium (600 to 839): a rail, and the selected page fills the area beside it, the map too when selected; no side panel. Reason: at 600 px a map beside a panel got about 200 px. Expanded (840 and up): a rail, the map in the main area, and the selected page in a side panel: half the area beside the rail, 320 to 400 px, but no wider than leaves the map `Layout.mapMinWidth` (360 px) (`Layout.sidePanelWidth`). Neither is ever shrunk below its minimum: when a wide rail (long Bangla labels, large text scale) leaves less than 681 px beside it (`Layout.mapAndPanelFit`), the expanded layout shows the medium content instead (rail, page fills the area, no panel). Choosing Map closes the panel. One selection for all three layouts, so a resize across either breakpoint keeps the page. CLAUDE.md (Platforms) describes the same three layouts. The header on every page shows company, cash and a turbo badge (only while the speed is above 1). The start page is the garage until the map is built in step 12. Pages have no Scaffold of their own. Icons are Flutter's built-in outlined Material icons (no icon package)
 - Widget tests that use the save go through `test/support/app_harness.dart`: the save is real file IO, so setup runs in `runAsync`, every later engine operation stays in the test zone, and `settle` pumps until `engine.isBusy` is false. Mixing the two zones deadlocks inside Hive
@@ -125,7 +127,9 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - The sheet's First Hour tab ignores demand and the garage cap. `tool/first_hours_sim.dart` is the pacing check until the sheet is updated
 - Route distances are approximate. Replace with real road distances (OSRM) during data prep
 - Meghna+Gumti and Paturia ferry tolls are partly estimated. Re-verify all tolls, diesel price and truck prices before release
-- The garage's "Start working" button (R01, General dry hardcoded) is temporary: the assign screen replaces it in step 10. Map, finance and settings are `ComingLater` placeholders until steps 12 to 14- `Company.permits` (adapter field 5, optional, default empty) exists, but a permit purchase is not yet part of `ChangeSet`. Add `permitsAfter` to `ChangeSet` with the buy screen (Milestone 4), so buying a permit is crash safe like every other save. Committing a change already keeps the owned permits
+- The garage's "Start working" button (R01, General dry hardcoded) is temporary: the assign screen replaces it in step 10. Map, finance and settings are `ComingLater` placeholders until steps 12 to 14
+- Same-process commit failure: the engine loads the world, then `commit` finishes any pending record before writing. If a commit throws half way (a disk error) and the app keeps running, the next operation computes from the half-applied save and can pay the same trips twice. A restart is safe (`start` recovers first). Fix: call `recoverPending` before loading the world in every engine operation
+- `DayRollup` records are never pruned: one per game day with a settled trip, about 60 a real day at 1x (a few kB each day, all loaded by Hive). Decide in step 8, with trip pruning, whether to keep them all or cap them
 - Deferred fields: fitness certificate expiry, terminal level, checklist progress (add with defaults in their milestones)
 - The pacing tool's bots buy no permits, so tiers 5 and up are never tested for pacing. Add permit buying to the bots when tier 5 and up matter (Milestone 5 or later)
 

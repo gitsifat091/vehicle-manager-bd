@@ -47,6 +47,7 @@ SimWorld loadWorld(SaveDatabase db) => SimWorld(
   vehicles: db.vehicles.all(),
   unsettledTrips: db.trips.unsettled(),
   routeStates: db.routeStates.all(),
+  rollupOf: db.dayRollups.forDay,
 );
 
 Future<void> seedCompany(SaveDatabase db) {
@@ -133,6 +134,24 @@ void main() {
           company.completedTrips,
           change.completedTripsAfter,
           reason: 'trip count is counted once',
+        );
+        final settled = change.settledTrips;
+        expect(
+          company.lifetimeRevenue,
+          settled.fold<int>(0, (s, t) => s + t.revenue),
+          reason: 'lifetime revenue is counted once',
+        );
+        expect(
+          company.lifetimeCosts,
+          settled.fold(TripCosts.zero, (s, t) => s + t.costs),
+          reason: 'lifetime costs are counted once',
+        );
+        final days = check.dayRollups.all();
+        expect(days, unorderedEquals(change.dayRollups));
+        expect(
+          days.fold<int>(0, (s, d) => s + d.trips),
+          settled.length,
+          reason: 'each settled trip is in exactly one day',
         );
         for (final trip in change.trips) {
           expect(check.trips.get(trip.id), trip, reason: 'trip ${trip.id}');
@@ -294,6 +313,87 @@ void main() {
     await seedCompany(db);
     expect(await ChangeCommitter(db).recoverPending(), false);
     expect(db.company.load()!.cash, startCash);
+  });
+
+  group('crash safety: a purchase, a sale and a permit', () {
+    late SaveDatabase db;
+    final bought = Vehicle(id: 'v9', tier: 5, purchasedAt: t0);
+    final change = ChangeSet(
+      cashAfter: startCash - 400000,
+      completedTripsAfter: 0,
+      vehicles: [bought],
+      removedVehicleIds: ['v1'],
+      permitsAfter: {'light'},
+    );
+
+    Future<void> setUp() async {
+      db = await folder.open();
+      await seedCompany(db);
+      await db.vehicles.put(assignedVehicle());
+    }
+
+    void expectApplied(SaveDatabase check) {
+      final company = check.company.load()!;
+      expect(company.cash, startCash - 400000, reason: 'paid once');
+      expect(company.permits, {'light'});
+      expect(check.vehicles.get('v9'), bought);
+      expect(check.vehicles.get('v1'), isNull, reason: 'the sold one is gone');
+      expect(check.vehicles.count, 1);
+      expect(check.pending.load(), isNull);
+    }
+
+    test('a clean commit', () async {
+      await setUp();
+      await ChangeCommitter(db).commit(change);
+      expectApplied(db);
+    });
+
+    for (final step in CommitStep.values) {
+      test('a crash after ${step.name}, then restart', () async {
+        await setUp();
+        await expectLater(
+          crashingAfter(db, step).commit(change),
+          throwsA(isA<SimulatedCrash>()),
+        );
+        await db.close();
+        final reopened = await folder.open();
+        await ChangeCommitter(reopened).recoverPending();
+        expectApplied(reopened);
+        expect(await ChangeCommitter(reopened).recoverPending(), false);
+        expectApplied(reopened);
+      });
+    }
+  });
+
+  test('settling adds to a day rollup that is already saved', () async {
+    final db = await folder.open();
+    await seedCompany(db);
+    await db.vehicles.put(assignedVehicle());
+    final sim = simulatorFor(quietConfig(), 1);
+
+    // Two commits on the same game day: the second builds on the first.
+    final first = sim.advance(
+      world: loadWorld(db),
+      now: t0.add(const Duration(minutes: 3)),
+      turboSpeed: 1,
+    );
+    await ChangeCommitter(db).commit(first);
+    final second = sim.advance(
+      world: loadWorld(db),
+      now: t0.add(const Duration(minutes: 6)),
+      turboSpeed: 1,
+    );
+    await ChangeCommitter(db).commit(second);
+
+    final day = db.dayRollups.forDay(0)!;
+    final settled = db.trips.all().where((t) => t.settled).toList();
+    expect(
+      settled,
+      hasLength(first.settledTrips.length + second.settledTrips.length),
+    );
+    expect(day.trips, settled.length);
+    expect(day.revenue, settled.fold<int>(0, (s, t) => s + t.revenue));
+    expect(db.company.load()!.lifetimeRevenue, day.revenue);
   });
 
   test('committing a change keeps the permits the company owns', () async {

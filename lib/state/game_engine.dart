@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../core/config/economy_config.dart';
+import '../core/economy/purchase_rules.dart';
+import '../core/economy/unlock_rules.dart';
 import '../core/sim/clock.dart';
 import '../core/sim/dispatch.dart';
 import '../core/sim/game_simulator.dart';
@@ -188,6 +190,71 @@ class GameEngine extends ChangeNotifier {
         return _dispatch(vehicle);
       });
 
+  /// Buys a new vehicle of [tier] for its price. It arrives in the garage
+  /// unassigned. Refused, with nothing saved, when the vehicle is locked, the
+  /// garage is full or the cash is short (`checkVehiclePurchase`).
+  ///
+  /// Throws a [StateError] when there is no game.
+  Future<VehiclePurchaseOutcome> buyVehicle(int tier) => _serial(() async {
+    final company = _requireCompany();
+    final spec = config.vehicleByTier(tier);
+    final rejection = checkVehiclePurchase(
+      settings: config.settings,
+      vehicle: spec,
+      cash: company.cash,
+      vehiclesOwned: _db.vehicles.count,
+      completedTrips: company.completedTrips,
+      ownedPermits: company.permits,
+    );
+    if (rejection != null) return VehiclePurchaseOutcome.refused(rejection);
+
+    final vehicle = Vehicle(
+      id: _newId('veh'),
+      tier: tier,
+      purchasedAt: _clock.now(),
+    );
+    await _committer.commit(
+      ChangeSet(
+        cashAfter: company.cash - spec.priceTk,
+        completedTripsAfter: company.completedTrips,
+        vehicles: [vehicle],
+      ),
+    );
+    notifyListeners();
+    return VehiclePurchaseOutcome.bought(vehicle);
+  });
+
+  /// Buys the operating permit [permitId] once, for its price in Taka. Returns
+  /// why it was refused (already owned, cash short), or null when bought.
+  ///
+  /// Throws a [StateError] when there is no game.
+  Future<PermitRejection?> buyPermit(String permitId) => _serial(() async {
+    final company = _requireCompany();
+    final permit = config.permitById(permitId);
+    final rejection = checkPermitPurchase(
+      permit: permit,
+      cash: company.cash,
+      ownedPermits: company.permits,
+    );
+    if (rejection != null) return rejection;
+
+    await _committer.commit(
+      ChangeSet(
+        cashAfter: company.cash - permit.priceTk,
+        completedTripsAfter: company.completedTrips,
+        permitsAfter: {...company.permits, permit.id},
+      ),
+    );
+    notifyListeners();
+    return null;
+  });
+
+  Company _requireCompany() {
+    final company = _db.company.load();
+    if (company == null) throw StateError('There is no game to buy for.');
+    return company;
+  }
+
   Future<DispatchOutcome> _dispatch(Vehicle vehicle) async {
     final outcome = _simulator.dispatchNow(
       world: _loadWorld(replacing: vehicle),
@@ -231,6 +298,7 @@ class GameEngine extends ChangeNotifier {
       vehicles: vehicles,
       unsettledTrips: _db.trips.unsettled(),
       routeStates: _db.routeStates.all(),
+      rollupOf: _db.dayRollups.forDay,
     );
   }
 
@@ -267,4 +335,21 @@ class GameEngine extends ChangeNotifier {
   /// chain of file operations that finish in real time.
   @visibleForTesting
   bool get isBusy => _pending > 0;
+}
+
+/// The result of [GameEngine.buyVehicle]: the new vehicle, or why the
+/// purchase was refused.
+class VehiclePurchaseOutcome {
+  const VehiclePurchaseOutcome.bought(Vehicle this.vehicle) : rejection = null;
+
+  const VehiclePurchaseOutcome.refused(PurchaseRejection this.rejection)
+    : vehicle = null;
+
+  /// The vehicle now in the garage, unassigned. Null when refused.
+  final Vehicle? vehicle;
+
+  /// Why nothing was bought. Null when bought.
+  final PurchaseRejection? rejection;
+
+  bool get bought => vehicle != null;
 }
