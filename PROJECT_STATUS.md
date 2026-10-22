@@ -128,6 +128,22 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
    - **F** (E plus permits) bought no permit and equals E. On the Dhaka Local routes no permit-locked vehicle beats the worst one, because large vehicles do not fit them (a Pahari Tipper holds 0.0 to 0.8 per Local route)
    - **With Line hauls** (diagnostic G = E, H = F, an attentive player): total income 108.0 and 108.3. G stalls from hour 4 with 36 idle. H buys one permit (Light) and one Meghna 14 and ends lower in net worth at resale value (63.3 against 74.7)
    - **Conclusion:** selling and permits do not carry the mid-game on Local routes. Large vehicles and Line hauls need terminals. In Milestone 5, validate the mid-game with a terminal-buying policy in the tool, and price terminals and slot expansion for the idle cash. No balance number changes until then
+5. **First upgrade as an early goal (not decided, economy.json and the sheet unchanged).** Goal: the first upgrade around minute 20 to 30 for a typical player. Today it happens at minute 0 for policies B to H, because the starting Tk 15 lakh already buys one. "First upgrade" is the first purchase whose job earns more per real hour than the starter's own job (Sathi Plus, R01, General dry). On the Dhaka Local routes only one purchase qualifies: another Sathi Plus (Tk 13 lakh) carrying parcels. Figures from `dart run tool/pacing_probe.dart` (3 hours, 20 seeds, medians, config edited in memory only):
+
+   | Option | U: first upgrade | 3 h income, Tk lakh (U / B / D / E / G) |
+   |---|---|---|
+   | Today (cash Tk 15 lakh) | minute 0 | 57.3 / 49.2 / 42.6 / 59.4 / 75.4 |
+   | 1. Starting cash Tk 7 lakh | 19.3 min | 25.2 / 23.5 / 31.1 / 42.2 / 46.0 |
+   | 1. Starting cash Tk 6 lakh | 24.9 min | 22.1 / 21.8 / 31.2 / 41.6 / 44.3 |
+   | 1. Starting cash Tk 5 lakh | 31.4 min | 20.5 / 20.1 / 28.0 / 40.0 / 43.8 |
+   | 2. Tiers 3 and 4 at 1.75x (Sathi Plus Tk 22.75 lakh), cash Tk 15 lakh | 29.9 min | 20.9 / 19.5 / 34.4 / 38.7 / 41.0 |
+   | 3. Cash Tk 10 lakh and tiers 3 and 4 at 1.25x (Sathi Plus Tk 16.25 lakh) | 20.2 min | 22.1 / 22.9 / 34.4 / 40.4 / 44.0 |
+
+   - **Spending bots never upgrade.** With less than Tk 13 lakh at the start, policies A to G never upgrade within 3 hours in any option: they spend at once on cheaper vehicles (vans, Bijli Cargos, Tuntuni Minis) and fill the garage first. E keeps its cash at 3 to 6 lakh, so it never affords the Sathi Plus either
+   - **Saver bot (U, probe only):** keeps the starter working and buys only tier 4 and up, so it buys nothing until a Sathi Plus is affordable. Its upgrade time follows from the starter's earnings (about Tk 31,000 a minute at 20x) and the gap between the starting cash and Tk 13 lakh
+   - **Trade-offs:** every option cuts 3-hour income by about 30 to 60 percent, most of it in hour 1, because fewer vehicles run during the 20x turbo. Option 1 is one game-design number and keeps truck prices real (recommended). Option 2 breaks the decision that truck prices stay fully real and raises the starter's own price (and so its accident cost). Option 3 moves prices less but still moves them
+   - **Not checked yet:** the first terminal at Tk 8 lakh (lower starting cash delays it), and open question 1 (cash idle after the turbo, which lower starting cash may ease)
+   - **Likely the real lever:** the upgrade only becomes a goal when the player saves for it. A Milestone 6 checklist task (for example "buy a second Sathi Plus", with a reward) may be what makes it one, with or without a balance change
 
 ## Known gaps (fix before release, not now)
 
@@ -144,6 +160,7 @@ Policies: A buys the cheapest useful vehicle (all tiers), B the cheapest from ti
 - Claude Code on Windows: interactive commands (like `flutter doctor --android-licenses`) do not work with `!`. Run them in a separate terminal tab
 - Heredocs fail in the Windows shell. Write scripts to a file, then run them
 - `dart run tool/first_hours_sim.dart [hours] [seeds] [policies] [resale] [--sell-starter]` simulates the first hours with the real sim code and prints the pacing figures used in the open questions (policies A to H, default all; the optional last argument overrides the resale share in memory for a sensitivity run)
+- `dart run tool/pacing_probe.dart [filter ...]` runs first_hours_sim on in-memory variants of starting cash and tier 3 and 4 prices and prints the first-upgrade minute and 3-hour income per policy (open question 5). It adds the saver policy U
 - `dart run tool/payback_by_tier.dart` prints payback per tier on its best route, the same definition as the sheet (both tools use `route_economics.dart`)- PowerShell 5.1 `Set-Content -Encoding utf8` adds a BOM, and `Get-Content -Raw` reads UTF-8 as ANSI, which corrupts Bangla text when the file is written back. Edit source, JSON and test files with the editor tools, or use `[IO.File]::ReadAllText` and `WriteAllText` with a UTF-8 encoding without a BOM
 - `lib`, `test` and `tool` are `dart format` clean, so formatting any file or the whole tree only changes what you edited
 - Hive in widget tests: see `test/support/app_harness.dart` (Milestone 4 decisions above)
